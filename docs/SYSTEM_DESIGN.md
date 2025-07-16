@@ -44,6 +44,9 @@ graph TD
 
 *Visual: [ProjectSystemArchitecture.png](modules_images/ProjectSystemArchitecture.png)*
 
+**Description:**  
+This System Architecture diagram provides a high-level overview of the Focus Hub platform, showing how the frontend, API layer, backend services, and external integrations interact. It highlights the modular structure and the flow of data between major system components.
+
 ### Deployment Architecture
 ```mermaid
 graph TD
@@ -62,6 +65,9 @@ graph TD
   User -->|API Requests| Supabase
   Host -->|API Proxy| Supabase
 ```
+
+**Description:**  
+This Deployment Architecture diagram illustrates the CI/CD workflow, from code commit to deployment and user access. It shows how the application is built, tested, deployed to cloud hosting, and how users interact with the frontend and backend services.
 
 ---
 
