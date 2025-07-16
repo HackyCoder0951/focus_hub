@@ -80,6 +80,9 @@ sequenceDiagram
 ```
 *Visual: [API_DFD.png](modules_images/API_DFD.png)*
 
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the API Layer module. It highlights the main processes, API calls, and how information is exchanged in real time.
+
 ### Library Utilities
 ```mermaid
 flowchart TD
@@ -87,6 +90,9 @@ flowchart TD
     B -->|Returns result| A
 ```
 *Visual: [LibraryUtility_DFD.png](modules_images/LibraryUtility_DFD.png)*
+
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the Library Utility module. It highlights the main processes, API calls, and how information is exchanged in real time.
 
 ### Authentication Context
 ```mermaid
@@ -101,6 +107,9 @@ sequenceDiagram
 ```
 *Visual: [ContextProviders_DFD.png](modules_images/ContextProviders_DFD.png)*
 
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the Authentication Context module. It highlights the main processes, API calls, and how information is exchanged in real time.
+
 ### Custom React Hooks
 ```mermaid
 flowchart TD
@@ -108,6 +117,9 @@ flowchart TD
     B -->|Provides state/logic| A
 ```
 *Visual: [CustomHooks_DFD.png](modules_images/CustomHooks_DFD.png)*
+
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the Custom Hooks module. It highlights the main processes, API calls, and how information is exchanged in real time.
 
 ### External Integrations
 ```mermaid
@@ -124,6 +136,9 @@ sequenceDiagram
     SupabaseClient-->>Frontend: Data/Update
 ```
 *Visual: [Integration_DFD.png](modules_images/Integration_DFD.png)*
+
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the External Integrations module. It highlights the main processes, API calls, and how information is exchanged in real time.
 
 ### AI Answers Module
 ```mermaid
@@ -177,6 +192,9 @@ graph TD
 ```
 *Visual: [AiAnswers_DFD.png](modules_images/AiAnswers_DFD.png)*
 
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the AI Answers module. It highlights the main processes, API calls, and how information is exchanged in real time.
+
 ### Main Application Pages
 ```mermaid
 sequenceDiagram
@@ -188,6 +206,9 @@ sequenceDiagram
     Page-->>User: Display content and UI
 ```
 *Visual: [Pages_DFD.png](modules_images/Pages_DFD.png)*
+
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the Main Application Pages module. It highlights the main processes, API calls, and how information is exchanged in real time.
 
 ### Q&A
 ```mermaid
@@ -205,6 +226,9 @@ sequenceDiagram
 ```
 *Visual: [QnA_DFD.png](modules_images/QnA_DFD.png)*
 
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the Q&A module. It highlights the main processes, API calls, and how information is exchanged in real time.
+
 ### Feed
 ```mermaid
 sequenceDiagram
@@ -220,6 +244,9 @@ sequenceDiagram
     Feed-->>User: Update UI
 ```
 *Visual: [Feed_DFD.png](modules_images/Feed_DFD.png)*
+
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the Feed module. It highlights the main processes, API calls, and how information is exchanged in real time.
 
 ### Chat
 ```mermaid
@@ -237,6 +264,9 @@ sequenceDiagram
 ```
 *Visual: [Chat_DFD.png](modules_images/Chat_DFD.png)*
 
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the Chat module. It highlights the main processes, API calls, and how information is exchanged in real time.
+
 ### Profile
 ```mermaid
 sequenceDiagram
@@ -252,6 +282,9 @@ sequenceDiagram
     Profile-->>User: Update UI
 ```
 *Visual: [UserProfile_DFD.png](modules_images/UserProfile_DFD.png)*
+
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the Profile module. It highlights the main processes, API calls, and how information is exchanged in real time.
 
 ### Resources
 ```mermaid
@@ -272,6 +305,9 @@ sequenceDiagram
 ```
 *Visual: [Resources_DFD.png](modules_images/Resources_DFD.png)*
 
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the Resources module. It highlights the main processes, API calls, and how information is exchanged in real time.
+
 ### Settings
 ```mermaid
 sequenceDiagram
@@ -287,6 +323,9 @@ sequenceDiagram
     Settings-->>User: Update UI
 ```
 *Visual: [Settings_DFD.png](modules_images/Settings_DFD.png)*
+
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the Settings module. It highlights the main processes, API calls, and how information is exchanged in real time.
 
 ### Login
 ```mermaid
@@ -304,6 +343,9 @@ sequenceDiagram
 ```
 *Visual: [Login_DFD.png](modules_images/Login_DFD.png)*
 
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the Login module. It highlights the main processes, API calls, and how information is exchanged in real time.
+
 ### Register
 ```mermaid
 sequenceDiagram
@@ -319,6 +361,9 @@ sequenceDiagram
     Register-->>User: Show confirmation / next steps
 ```
 *Visual: [Register_DFD.png](modules_images/Register_DFD.png)*
+
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the Register module. It highlights the main processes, API calls, and how information is exchanged in real time.
 
 ### Admin Dashboard
 ```mermaid
@@ -336,6 +381,9 @@ sequenceDiagram
 ```
 *Visual: [AdminDashboard_DFD.png](modules_images/AdminDashboard_DFD.png)*
 
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the Admin Dashboard module. It highlights the main processes, API calls, and how information is exchanged in real time.
+
 ### UI Component Library
 ```mermaid
 flowchart TD
@@ -345,6 +393,9 @@ flowchart TD
     Component -->|Emits Events| Page
 ```
 *Visual: [Components_DFD.png](modules_images/Components_DFD.png)*
+
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the UI Component Library module. It highlights the main processes, API calls, and how information is exchanged in real time.
 
 ### Database Design (Overall)
 ```mermaid
@@ -360,6 +411,9 @@ graph TD
   DB -->|Query Result| Process
 ```
 *Visual: [DatabaseDesign_DFD.png](modules_images/DatabaseDesign_DFD.png)*
+
+**Description:**  
+This Data Flow Diagram illustrates the flow of data and interactions between the user, frontend components, backend services, and the database for the Database Design module. It highlights the main processes, API calls, and how information is exchanged in real time.
 
 ---
 
@@ -378,6 +432,9 @@ flowchart TD
 ```
 *Visual: [API_UseCaseDiagram.png](modules_images/API_UseCaseDiagram.png)*
 
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the API Layer module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
+
 ### Library Utilities
 ```mermaid
 flowchart TD
@@ -386,6 +443,9 @@ flowchart TD
   Component --> Transform((Transform Data))
 ```
 *Visual: [LibraryUtility_UseCaseDiagram.png](modules_images/LibraryUtility_UseCaseDiagram.png)*
+
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the Library Utility module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
 
 ### Authentication Context
 ```mermaid
@@ -398,6 +458,9 @@ flowchart TD
 ```
 *Visual: [ContextProviders_UseCaseDiagram.png](modules_images/ContextProviders_UseCaseDiagram.png)*
 
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the Authentication Context module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
+
 ### Custom React Hooks
 ```mermaid
 flowchart TD
@@ -406,6 +469,9 @@ flowchart TD
   Comp --> Form((Manage Form State))
 ```
 *Visual: [CustomHook_UseCaseDiagram.png](modules_images/CustomHook_UseCaseDiagram.png)*
+
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the Custom Hooks module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
 
 ### External Integrations
 ```mermaid
@@ -416,6 +482,9 @@ flowchart TD
   Frontend --> Query((Query Database))
 ```
 *Visual: [Integration_UseCaseDiagram.png](modules_images/Integration_UseCaseDiagram.png)*
+
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the External Integrations module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
 
 ### AI Answers Module
 ```mermaid
@@ -454,6 +523,9 @@ graph TD
 ```
 *Visual: [AiAnswers_UseCaseDiagram.png](modules_images/AiAnswers_UseCaseDiagram.png)*
 
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the AI Answers module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
+
 ### Main Application Pages
 ```mermaid
 flowchart TD
@@ -465,6 +537,9 @@ flowchart TD
 ```
 *Visual: [Pages_UseCaseDiagram.png](modules_images/Pages_UseCaseDiagram.png)*
 
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the Main Application Pages module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
+
 ### Q&A
 ```mermaid
 flowchart TD
@@ -475,6 +550,9 @@ flowchart TD
 ```
 *Visual: [QnA_UseCaseDiagram.png](modules_images/QnA_UseCaseDiagram.png)*
 
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the Q&A module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
+
 ### Feed
 ```mermaid
 flowchart TD
@@ -484,6 +562,9 @@ flowchart TD
   User --> View((View Feed))
 ```
 *Visual: [Feed_UseCaseDiagram.png](modules_images/Feed_UseCaseDiagram.png)*
+
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the Feed module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
 
 ### Chat
 ```mermaid
@@ -497,6 +578,9 @@ flowchart TD
 ```
 *Visual: [Chat_UseCaseDiagram.png](modules_images/Chat_UseCaseDiagram.png)*
 
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the Chat module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
+
 ### Profile
 ```mermaid
 flowchart TD
@@ -506,6 +590,9 @@ flowchart TD
   User --> Avatar((Upload Avatar))
 ```
 *Visual: [UserProfile_UseCaseDiagram.png](modules_images/UserProfile_UseCaseDiagram.png)*
+
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the Profile module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
 
 ### Resources
 ```mermaid
@@ -519,6 +606,9 @@ flowchart TD
 ```
 *Visual: [Resources_UseCaseDiagram.png](modules_images/Resources_UseCaseDiagram.png)*
 
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the Resources module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
+
 ### Settings
 ```mermaid
 flowchart TD
@@ -530,6 +620,9 @@ flowchart TD
 ```
 *Visual: [Settings_UseCaseDiagram.png](modules_images/Settings_UseCaseDiagram.png)*
 
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the Settings module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
+
 ### Login
 ```mermaid
 flowchart TD
@@ -539,6 +632,9 @@ flowchart TD
 ```
 *Visual: [Login_UseCaseDiagram.png](modules_images/Login_UseCaseDiagram.png)*
 
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the Login module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
+
 ### Register
 ```mermaid
 flowchart TD
@@ -547,6 +643,9 @@ flowchart TD
   User --> Setup((Complete Profile Setup))
 ```
 *Visual: [Register_UseCaseDiagram.png](modules_images/Register_UseCaseDiagram.png)*
+
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the Register module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
 
 ### Admin Dashboard
 ```mermaid
@@ -560,6 +659,9 @@ graph TD
 ```
 *Visual: [AdminDashboard_UseCaseDiagram.png](modules_images/AdminDashboard_UseCaseDiagram.png)*
 
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the Admin Dashboard module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
+
 ### UI Component Library
 ```mermaid
 flowchart TD
@@ -571,6 +673,9 @@ flowchart TD
   Developer --> Reuse((Reuse Button, Input, etc.))
 ```
 *Visual: [Components_UseCaseDiagram.png](modules_images/Components_UseCaseDiagram.png)*
+
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the UI Component Library module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
 
 ### Database Design (Overall)
 ```mermaid
@@ -599,6 +704,9 @@ graph TB
 ```
 *Visual: [DatabaseDesign_UseCaseDiagram.png](modules_images/DatabaseDesign_UseCaseDiagram.png)*
 
+**Description:**  
+The Use Case Diagram presents the primary actions and interactions available to users and system actors within the Database Design module. It visually summarizes the main features, user goals, and system boundaries for quick understanding of module functionality.
+
 ---
 
 ## 4. Module Database Designs (ERD)
@@ -626,9 +734,15 @@ erDiagram
 ```
 *Visual: [API_ERD.png](modules_images/API_ERD.png)*
 
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the API Layer module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
+
 ### Library Utilities
 _No direct database tables; utilities are used across modules._
 *Visual: [LibraryUtility_ERD.png](modules_images/LibraryUtility_ERD.png)*
+
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the Library Utility module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
 
 ### Authentication Context
 ```mermaid
@@ -639,9 +753,15 @@ erDiagram
 ```
 *Visual: [ContextProviders_ERD.png](modules_images/ContextProviders_ERD.png)*
 
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the Authentication Context module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
+
 ### Custom React Hooks
 _No direct database tables; hooks encapsulate logic, not direct data storage._
 *Visual: [CustomHooks_ERD.png](modules_images/CustomHooks_ERD.png)*
+
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the Custom Hooks module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
 
 ### External Integrations
 ```mermaid
@@ -652,6 +772,9 @@ erDiagram
   supabase_client ||--o{ messages : ""
 ```
 *Visual: [Integration_ERD.png](modules_images/Integration_ERD.png)*
+
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the External Integrations module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
 
 ### AI Answers Module
 ```mermaid
@@ -671,6 +794,9 @@ erDiagram
 ```
 *Visual: [AiAnswers_ERD.png](modules_images/AiAnswers_ERD.png)*
 
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the AI Answers module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
+
 ### Main Application Pages
 ```mermaid
 erDiagram
@@ -683,6 +809,9 @@ erDiagram
 ```
 *Visual: [Pages_ERD.png](modules_images/Pages_ERD.png)*
 
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the Main Application Pages module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
+
 ### Q&A
 ```mermaid
 erDiagram
@@ -692,6 +821,9 @@ erDiagram
   questionanswers }|..|{ profiles : ""
 ```
 *Visual: [QnA_ERD.png](modules_images/QnA_ERD.png)*
+
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the Q&A module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
 
 ### Feed
 ```mermaid
@@ -703,6 +835,9 @@ erDiagram
   likes }|..|{ profiles : ""
 ```
 *Visual: [Feed_ERD.png](modules_images/Feed_ERD.png)*
+
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the Feed module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
 
 ### Chat
 ```mermaid
@@ -726,6 +861,9 @@ erDiagram
 ```
 *Visual: [Chat_ERD.png](modules_images/Chat_ERD.png)*
 
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the Chat module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
+
 ### Profile
 ```mermaid
 erDiagram
@@ -736,6 +874,9 @@ erDiagram
 ```
 *Visual: [UserProfile_ERD.png](modules_images/UserProfile_ERD.png)*
 
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the Profile module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
+
 ### Resources
 ```mermaid
 erDiagram
@@ -745,6 +886,9 @@ erDiagram
 ```
 *Visual: [Resources_ERD.png](modules_images/Resources_ERD.png)*
 
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the Resources module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
+
 ### Settings
 ```mermaid
 erDiagram
@@ -752,6 +896,9 @@ erDiagram
   profiles ||--o{ user_roles : ""
 ```
 *Visual: [Settings_ERD.png](modules_images/Settings_ERD.png)*
+
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the Settings module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
 
 ### Login
 ```mermaid
@@ -761,6 +908,9 @@ erDiagram
 ```
 *Visual: [Login_ERD.png](modules_images/Login_ERD.png)*
 
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the Login module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
+
 ### Register
 ```mermaid
 erDiagram
@@ -769,6 +919,9 @@ erDiagram
   profiles }|..|{ user_roles : ""
 ```
 *Visual: [Register_ERD.png](modules_images/Register_ERD.png)*
+
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the Register module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
 
 ### Admin Dashboard
 ```mermaid
@@ -781,9 +934,15 @@ erDiagram
 ```
 *Visual: [AdminDashboard_ERD.png](modules_images/AdminDashboard_ERD.png)*
 
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the Admin Dashboard module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
+
 ### UI Component Library
 _Not applicable: UI components do not directly interact with the database._
 *Visual: [Components_ERD.png](modules_images/Components_ERD.png)*
+
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the UI Component Library module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
 
 ### Database Design (Overall)
 ```mermaid
@@ -811,6 +970,9 @@ erDiagram
   resources ||--|| users : "belongs to"
 ```
 *Visual: [DatabaseDesign_ERD.png](modules_images/DatabaseDesign_ERD.png)*
+
+**Description:**  
+This Entity Relationship Diagram (ERD) depicts the core database tables and their relationships for the Database Design module. It shows how entities such as users, resources, and related records are structured and linked, supporting the module's data integrity and access patterns.
 
 ---
 
