@@ -607,42 +607,16 @@ graph TB
 ```mermaid
 erDiagram
   chats {
-    uuid id PK "Primary Key"
-    boolean is_group "Is Group Chat"
-    text name "Chat name"
-    timestamptz created_at "Created Timestamp"
-    uuid created_by FK "Creator (user_id)"
+
   }
   chat_members {
-    uuid id PK
-    uuid chat_id FK
-    uuid user_id FK
-    timestamptz joined_at
-    boolean is_admin
-    boolean typing
+
   }
   chat_messages {
-    uuid id PK
-    uuid chat_id FK
-    uuid user_id FK
-    text content
-    text media_url
-    timestamptz created_at
+
   }
   profiles {
-    uuid id PK
-    text email
-    text full_name
-    text avatar_url
-    text bio
-    text location
-    text website
-    jsonb settings
-    member_type_enum member_type
-    text status
-    timestamptz created_at
-    timestamptz updated_at
-    timestamptz last_seen
+   
   }
   chats ||--o{ chat_members : "has"
   chats ||--o{ chat_messages : "includes"
@@ -734,28 +708,16 @@ erDiagram
 ```mermaid
 erDiagram
   profiles {
-    INT id
-    STRING username
-    STRING avatar_url
+
   }
   chats {
-    INT id
-    STRING type "direct/group"
-    STRING name
-    DATETIME created_at
+
   }
   chat_members {
-    INT chat_id
-    INT profile_id
-    BOOLEAN is_admin
+
   }
   chat_messages {
-    INT id
-    INT chat_id
-    INT sender_id
-    TEXT message
-    STRING file_url
-    DATETIME timestamp
+
   }
   chats ||--o{ chat_members : "has"
   chats ||--o{ chat_messages : "contains"
