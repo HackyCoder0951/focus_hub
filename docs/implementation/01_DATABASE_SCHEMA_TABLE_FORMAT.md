@@ -4,6 +4,8 @@ Below is the documentation for all tables in the Focus Hub database, including c
 
 ---
 
+## User Management Tables
+
 ## profiles
 
 | Column Name   | Data Type    | Constraints                                      |
@@ -25,8 +27,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 **Indexes:**
 - idx_profiles_id (id)
 
----
-
 ## user_roles
 
 | Column Name | Data Type    | Constraints                                      |
@@ -41,7 +41,7 @@ Below is the documentation for all tables in the Focus Hub database, including c
 - user_roles_pkey (id)
 - user_roles_user_id_role_key (user_id, role)
 
----
+## Social Feed Tables
 
 ## posts
 
@@ -61,8 +61,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 **Indexes:**
 - idx_posts_user_id (user_id)
 
----
-
 ## comments
 
 | Column Name | Data Type    | Constraints                                      |
@@ -80,8 +78,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 - comments_user_id_fkey (user_id)
 - comments_parent_id_fkey (parent_id)
 
----
-
 ## likes
 
 | Column Name | Data Type    | Constraints                                      |
@@ -94,8 +90,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 
 **Indexes:**
 - idx_likes_post_id (post_id)
-
----
 
 ## comment_likes
 
@@ -110,7 +104,7 @@ Below is the documentation for all tables in the Focus Hub database, including c
 **Indexes:**
 - comment_likes_comment_id_user_id_key (comment_id, user_id)
 
----
+## Q&A Module Tables
 
 ## questions
 
@@ -135,8 +129,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 - idx_questions_title_gin (to_tsvector('english', title))
 - idx_questions_body_gin (to_tsvector('english', body))
 
----
-
 ## answers
 
 | Column Name | Data Type    | Constraints                                      |
@@ -155,8 +147,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 - idx_answers_is_accepted (is_accepted)
 - idx_answers_created_at (created_at DESC)
 
----
-
 ## question_votes
 
 | Column Name | Data Type    | Constraints                                      |
@@ -172,8 +162,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 **Indexes:**
 - idx_question_votes_question_id (question_id)
 - idx_question_votes_user_id (user_id)
-
----
 
 ## answer_votes
 
@@ -191,8 +179,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 - idx_answer_votes_answer_id (answer_id)
 - idx_answer_votes_user_id (user_id)
 
----
-
 ## question_tags
 
 | Column Name | Data Type    | Constraints                                      |
@@ -206,8 +192,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 **Indexes:**
 - idx_question_tags_question_id (question_id)
 - idx_question_tags_tag_name (tag_name)
-
----
 
 ## ai_answers
 
@@ -228,8 +212,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 **Indexes:**
 - idx_ai_answers_question_id (question_id)
 
----
-
 ## question_notifications
 
 | Column Name         | Data Type    | Constraints                                                      |
@@ -248,8 +230,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 - idx_question_notifications_question_id (question_id)
 - idx_question_notifications_is_read (is_read)
 - idx_question_notifications_created_at (created_at DESC)
-
----
 
 ## answer_notifications
 
@@ -270,8 +250,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 - idx_answer_notifications_is_read (is_read)
 - idx_answer_notifications_created_at (created_at DESC)
 
----
-
 ## content_flags
 
 | Column Name         | Data Type    | Constraints                                                      |
@@ -287,8 +265,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 
 **Indexes:**
 - content_flags_pkey (id)
-
----
 
 ## answer_comments
 
@@ -307,8 +283,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 - idx_answer_comments_user_id (user_id)
 - idx_answer_comments_parent_comment_id (parent_comment_id)
 
----
-
 ## answer_tags
 
 | Column Name | Data Type    | Constraints                              |
@@ -322,8 +296,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 **Indexes:**
 - idx_answer_tags_answer_id (answer_id)
 - idx_answer_tags_tag_name (tag_name)
-
----
 
 ## votes
 
@@ -341,8 +313,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 - votes_pkey (id)
 - votes_user_id_target_id_target_type_key (user_id, target_id, target_type)
 
----
-
 ## reputation_events
 
 | Column Name | Data Type    | Constraints                                      |
@@ -357,8 +327,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 **Indexes:**
 - reputation_events_pkey (id)
 
----
-
 ## tags
 
 | Column Name | Data Type    | Constraints                                      |
@@ -370,8 +338,6 @@ Below is the documentation for all tables in the Focus Hub database, including c
 **Indexes:**
 - tags_pkey (id)
 - tags_name_key (name)
-
----
 
 ## Views: Name | Definition (full SQL in code block)
 
