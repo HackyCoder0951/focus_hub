@@ -376,6 +376,48 @@ export async function reviewFlaggedContent(flagId, status) {
 }
 ```
 
+**User Management Table (React)**
+```jsx
+import { useEffect, useState } from 'react';
+import { listAllUsers } from '../api/admin';
+
+export function UserManagementTable() {
+  const [users, setUsers] = useState([]);
+  useEffect(() => { listAllUsers().then(setUsers); }, []);
+  return (
+    <table>
+      <thead><tr><th>Email</th><th>Role</th></tr></thead>
+      <tbody>
+        {users.map(u => (
+          <tr key={u.id}><td>{u.email}</td><td>{u.role}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+```
+
+**Review Flagged Content (React)**
+```jsx
+import { useState } from 'react';
+import { reviewFlaggedContent } from '../api/admin';
+
+export function ReviewFlaggedContent({ flagId }) {
+  const [status, setStatus] = useState('reviewed');
+  return (
+    <form onSubmit={async e => { e.preventDefault(); await reviewFlaggedContent(flagId, status); }}>
+      <select value={status} onChange={e => setStatus(e.target.value)}>
+        <option value="reviewed">Reviewed</option>
+        <option value="resolved">Resolved</option>
+        <option value="dismissed">Dismissed</option>
+        <option value="deleted">Deleted</option>
+      </select>
+      <button type="submit">Update</button>
+    </form>
+  );
+}
+```
+
 ---
 
 ## 8. Settings & Preferences
@@ -393,15 +435,34 @@ export async function updateNotificationSettings(userId, settings) {
 }
 ```
 
-**Theme Toggle (React)**
-```tsx
+**Notification Settings Form (React)**
+```jsx
+import { useState } from 'react';
+import { updateNotificationSettings } from '../api/settings';
+
+export function NotificationSettingsForm({ userId, initialSettings }) {
+  const [emailNotif, setEmailNotif] = useState(initialSettings.email);
+  return (
+    <form onSubmit={async e => { e.preventDefault(); await updateNotificationSettings(userId, { email: emailNotif }); }}>
+      <label>
+        <input type="checkbox" checked={emailNotif} onChange={e => setEmailNotif(e.target.checked)} />
+        Email Notifications
+      </label>
+      <button type="submit">Save</button>
+    </form>
+  );
+}
+```
+
+**Theme Toggle Button (React)**
+```jsx
 import { useTheme } from './theme-provider';
 
-export function ThemeToggle() {
+export function ThemeToggleButton() {
   const { theme, setTheme } = useTheme();
   return (
     <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-      Toggle Theme
+      Switch to {theme === 'dark' ? 'Light' : 'Dark'} Mode
     </button>
   );
 }
