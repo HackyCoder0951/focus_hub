@@ -26,10 +26,10 @@
 - **Monitoring**: Supabase Analytics
 
 ### 1.2 Database Statistics
-- **Total Tables**: 15
-- **Total Indexes**: 25
-- **Total Functions**: 8
-- **Total Triggers**: 5
+- **Total Tables**: 24
+- **Total Indexes**: (see above, matches schema)
+- **Total Functions**: (see above, matches schema)
+- **Total Triggers**: (see above, matches schema)
 - **Database Size**: ~500MB (estimated)
 
 ---
@@ -1226,235 +1226,127 @@ CREATE TABLE IF NOT EXISTS "public"."votes" (
 
 ## 3. Relationships
 
-### 3.1 Entity Relationship Diagram (ERD)
-
-```mermaid
-erDiagram
-    users ||--o{ posts : "author"
-    users ||--o{ comments : "author"
-    users ||--o{ questions : "author"
-    users ||--o{ answers : "author"
-    users ||--o{ resources : "author"
-    users ||--o{ votes : "voter"
-    users ||--o{ notifications : "recipient"
-    
-    posts ||--o{ comments : "has"
-    posts ||--o{ votes : "receives"
-    
-    questions ||--o{ ai_answers : "has"
-    questions ||--o{ answers : "has"
-    questions ||--o{ votes : "receives"
-    answers ||--o{ votes : "receives"
-    
-    chat_rooms ||--o{ chat_messages : "contains"
-    chat_rooms ||--o{ chat_room_participants : "has"
-    
-    users ||--o{ followers : "follower"
-    users ||--o{ followers : "following"
-    
-    comments ||--o{ comments : "replies_to"
-```
-
-### 3.2 Foreign Key Relationships
+### 3.1 Foreign Key Relationships
 
 | Table | Column | References | On Delete |
 |-------|--------|------------|-----------|
-| posts | author_id | users.id | CASCADE |
-| comments | post_id | posts.id | CASCADE |
-| comments | author_id | users.id | CASCADE |
-| comments | parent_id | comments.id | CASCADE |
-| questions | author_id | users.id | CASCADE |
-| ai_answers | question_id | questions.id | CASCADE |
+| ai_answers | question_id | questions.id | SET NULL |
+| ai_answers | user_id | profiles.id | SET NULL |
+| answer_comments | answer_id | answers.id | CASCADE |
+| answer_comments | user_id | profiles.id | CASCADE |
+| answer_comments | parent_comment_id | answer_comments.id | CASCADE |
+| answer_notifications | answer_id | answers.id | CASCADE |
+| answer_notifications | user_id | profiles.id | CASCADE |
+| answer_votes | answer_id | answers.id | CASCADE |
+| answer_votes | user_id | profiles.id | CASCADE |
 | answers | question_id | questions.id | CASCADE |
-| answers | author_id | users.id | CASCADE |
-| chat_rooms | created_by | users.id | RESTRICT |
-| chat_messages | room_id | chat_rooms.id | CASCADE |
-| chat_messages | sender_id | users.id | CASCADE |
-| resources | author_id | users.id | CASCADE |
-| votes | user_id | users.id | CASCADE |
-| followers | follower_id | users.id | CASCADE |
-| followers | following_id | users.id | CASCADE |
-| chat_room_participants | room_id | chat_rooms.id | CASCADE |
-| chat_room_participants | user_id | users.id | CASCADE |
-| notifications | user_id | users.id | CASCADE |
+| answers | user_id | profiles.id | CASCADE |
+| chat_members | chat_id | chats.id | CASCADE |
+| chat_members | user_id | profiles.id | CASCADE |
+| chat_messages | chat_id | chats.id | CASCADE |
+| chat_messages | user_id | profiles.id | CASCADE |
+| comment_likes | comment_id | comments.id | CASCADE |
+| comment_likes | user_id | profiles.id | CASCADE |
+| comments | post_id | posts.id | CASCADE |
+| comments | user_id | profiles.id | CASCADE |
+| comments | parent_id | comments.id | CASCADE |
+| content_flags | flagged_by_user_id | profiles.id | CASCADE |
+| content_flags | post_id | posts.id | CASCADE |
+| content_flags | comment_id | comments.id | CASCADE |
+| filemodels | user_id | profiles.id | CASCADE |
+| followers | follower_id | profiles.id | CASCADE |
+| followers | following_id | profiles.id | CASCADE |
+| likes | user_id | profiles.id | CASCADE |
+| likes | post_id | posts.id | CASCADE |
+| notifications | user_id | profiles.id | CASCADE |
+| posts | user_id | profiles.id | CASCADE |
+| profiles | id | auth.users.id | CASCADE |
+| question_notifications | question_id | questions.id | CASCADE |
+| question_notifications | user_id | profiles.id | CASCADE |
+| question_votes | question_id | questions.id | CASCADE |
+| question_votes | user_id | profiles.id | CASCADE |
+| questions | user_id | profiles.id | CASCADE |
+| question_tags | question_id | questions.id | CASCADE |
+| reputation_events | user_id | profiles.id | CASCADE |
+| user_roles | user_id | profiles.id | CASCADE |
+| votes | user_id | profiles.id | CASCADE |
 
 ---
 
 ## 4. Indexes
 
-### 4.1 Primary Indexes
-All tables have primary key indexes on their `id` columns.
+### 4.1 Primary and Unique Indexes
+- All tables have primary key indexes on their `id` columns (or composite PKs where defined).
+- Unique constraints as defined in the schema (e.g., (user_id, role) in user_roles, (follower_id, following_id) in followers, etc.).
 
 ### 4.2 Secondary Indexes
+- Indexes on foreign key columns for all relationships above.
+- GIN indexes on array or JSONB columns (e.g., tags in posts, questions, resources).
+- Indexes on frequently queried columns (e.g., created_at, updated_at, status, is_read, is_accepted, etc.).
 
+### 4.3 Example Index Definitions
 ```sql
--- Users table indexes
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_users_created_at ON users(created_at);
-
--- Posts table indexes
-CREATE INDEX idx_posts_author_id ON posts(author_id);
-CREATE INDEX idx_posts_category ON posts(category);
+-- Example: Indexes for posts
+CREATE INDEX idx_posts_user_id ON posts(user_id);
 CREATE INDEX idx_posts_created_at ON posts(created_at);
 CREATE INDEX idx_posts_tags ON posts USING GIN(tags);
 
--- Comments table indexes
-CREATE INDEX idx_comments_post_id ON comments(post_id);
-CREATE INDEX idx_comments_author_id ON comments(author_id);
-CREATE INDEX idx_comments_parent_id ON comments(parent_id);
-CREATE INDEX idx_comments_created_at ON comments(created_at);
-
--- Questions table indexes
-CREATE INDEX idx_questions_author_id ON questions(author_id);
-CREATE INDEX idx_questions_category ON questions(category);
-CREATE INDEX idx_questions_status ON questions(status);
+-- Example: Indexes for questions
+CREATE INDEX idx_questions_user_id ON questions(user_id);
 CREATE INDEX idx_questions_created_at ON questions(created_at);
 CREATE INDEX idx_questions_tags ON questions USING GIN(tags);
 
--- AI Answers table indexes
-CREATE INDEX idx_ai_answers_question_id ON ai_answers(question_id);
-CREATE INDEX idx_ai_answers_confidence_score ON ai_answers(confidence_score DESC);
-
--- Answers table indexes
-CREATE INDEX idx_answers_question_id ON answers(question_id);
-CREATE INDEX idx_answers_author_id ON answers(author_id);
-CREATE INDEX idx_answers_is_accepted ON answers(is_accepted);
-
--- Chat messages indexes
-CREATE INDEX idx_chat_messages_room_id ON chat_messages(room_id);
-CREATE INDEX idx_chat_messages_sender_id ON chat_messages(sender_id);
-CREATE INDEX idx_chat_messages_created_at ON chat_messages(created_at);
-
--- Resources table indexes
-CREATE INDEX idx_resources_author_id ON resources(author_id);
-CREATE INDEX idx_resources_category ON resources(category);
-CREATE INDEX idx_resources_file_type ON resources(file_type);
-CREATE INDEX idx_resources_tags ON resources USING GIN(tags);
-
--- Votes table indexes
-CREATE INDEX idx_votes_user_id ON votes(user_id);
-CREATE INDEX idx_votes_votable ON votes(votable_type, votable_id);
-
--- Followers table indexes
-CREATE INDEX idx_followers_follower_id ON followers(follower_id);
-CREATE INDEX idx_followers_following_id ON followers(following_id);
-
--- Notifications table indexes
-CREATE INDEX idx_notifications_user_id ON notifications(user_id);
-CREATE INDEX idx_notifications_is_read ON notifications(is_read);
-CREATE INDEX idx_notifications_created_at ON notifications(created_at);
-```
-
-### 4.3 Full-Text Search Indexes
-
-```sql
--- Posts full-text search
-CREATE INDEX idx_posts_search ON posts USING GIN(to_tsvector('english', title || ' ' || content));
-
--- Questions full-text search
-CREATE INDEX idx_questions_search ON questions USING GIN(to_tsvector('english', title || ' ' || content));
-
--- Resources full-text search
-CREATE INDEX idx_resources_search ON resources USING GIN(to_tsvector('english', title || ' ' || description));
+-- Example: Indexes for comments
+CREATE INDEX idx_comments_post_id ON comments(post_id);
+CREATE INDEX idx_comments_user_id ON comments(user_id);
+CREATE INDEX idx_comments_parent_id ON comments(parent_id);
+CREATE INDEX idx_comments_created_at ON comments(created_at);
 ```
 
 ---
 
 ## 5. Row Level Security (RLS)
 
-### 5.1 RLS Policies
+### 5.1 RLS Enabled Tables
+- ai_answers
+- answer_comments
+- answer_notifications
+- answer_tags
+- answer_votes
+- answers
+- chat_members
+- chat_messages
+- chats
+- comment_likes
+- comments
+- content_flags
+- filemodels
+- followers
+- likes
+- notifications
+- posts
+- profiles
+- question_notifications
+- question_votes
+- questions
+- question_tags
+- reputation_events
+- tags
+- user_roles
+- votes
 
+### 5.2 Example RLS Policies
 ```sql
--- Enable RLS on all tables
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE answers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE chat_rooms ENABLE ROW LEVEL SECURITY;
-ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE resources ENABLE ROW LEVEL SECURITY;
-ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE followers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE chat_room_participants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+-- Enable RLS
+ALTER TABLE <table_name> ENABLE ROW LEVEL SECURITY;
 
--- Users policies
-CREATE POLICY "Users can view public profiles" ON users
+-- Example: Only allow users to update their own rows
+CREATE POLICY "Users can update own row" ON <table_name>
+    FOR UPDATE USING (auth.uid() = user_id);
+
+-- Example: Allow all users to read public data
+CREATE POLICY "Public read access" ON <table_name>
     FOR SELECT USING (true);
-
-CREATE POLICY "Users can update own profile" ON users
-    FOR UPDATE USING (auth.uid() = id);
-
--- Posts policies
-CREATE POLICY "Anyone can view published posts" ON posts
-    FOR SELECT USING (is_published = true);
-
-CREATE POLICY "Users can create posts" ON posts
-    FOR INSERT WITH CHECK (auth.uid() = author_id);
-
-CREATE POLICY "Users can update own posts" ON posts
-    FOR UPDATE USING (auth.uid() = author_id);
-
-CREATE POLICY "Users can delete own posts" ON posts
-    FOR DELETE USING (auth.uid() = author_id);
-
--- Comments policies
-CREATE POLICY "Anyone can view comments" ON comments
-    FOR SELECT USING (true);
-
-CREATE POLICY "Users can create comments" ON comments
-    FOR INSERT WITH CHECK (auth.uid() = author_id);
-
-CREATE POLICY "Users can update own comments" ON comments
-    FOR UPDATE USING (auth.uid() = author_id);
-
-CREATE POLICY "Users can delete own comments" ON comments
-    FOR DELETE USING (auth.uid() = author_id);
-
--- Questions policies
-CREATE POLICY "Anyone can view questions" ON questions
-    FOR SELECT USING (true);
-
-CREATE POLICY "Users can create questions" ON questions
-    FOR INSERT WITH CHECK (auth.uid() = author_id);
-
-CREATE POLICY "Users can update own questions" ON questions
-    FOR UPDATE USING (auth.uid() = author_id);
-
-CREATE POLICY "Users can delete own questions" ON questions
-    FOR DELETE USING (auth.uid() = author_id);
-
--- Answers policies
-CREATE POLICY "Anyone can view answers" ON answers
-    FOR SELECT USING (true);
-
-CREATE POLICY "Users can create answers" ON answers
-    FOR INSERT WITH CHECK (auth.uid() = author_id);
-
-CREATE POLICY "Users can update own answers" ON answers
-    FOR UPDATE USING (auth.uid() = author_id);
-
-CREATE POLICY "Users can delete own answers" ON answers
-    FOR DELETE USING (auth.uid() = author_id);
-
--- Resources policies
-CREATE POLICY "Anyone can view public resources" ON resources
-    FOR SELECT USING (is_public = true);
-
-CREATE POLICY "Users can view own resources" ON resources
-    FOR SELECT USING (auth.uid() = author_id);
-
-CREATE POLICY "Users can create resources" ON resources
-    FOR INSERT WITH CHECK (auth.uid() = author_id);
-
-CREATE POLICY "Users can update own resources" ON resources
-    FOR UPDATE USING (auth.uid() = author_id);
-
-CREATE POLICY "Users can delete own resources" ON resources
-    FOR DELETE USING (auth.uid() = author_id);
 ```
 
 ---
@@ -1462,9 +1354,7 @@ CREATE POLICY "Users can delete own resources" ON resources
 ## 6. Triggers and Functions
 
 ### 6.1 Update Timestamp Trigger
-
 ```sql
--- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -1474,94 +1364,35 @@ END;
 $$ language 'plpgsql';
 
 -- Apply trigger to all tables with updated_at column
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_posts_updated_at BEFORE UPDATE ON posts
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_comments_updated_at BEFORE UPDATE ON comments
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_questions_updated_at BEFORE UPDATE ON questions
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_answers_updated_at BEFORE UPDATE ON answers
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_resources_updated_at BEFORE UPDATE ON resources
+CREATE TRIGGER update_<table>_updated_at BEFORE UPDATE ON <table>
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 ```
 
 ### 6.2 Vote Count Triggers
-
 ```sql
--- Function to update vote counts
 CREATE OR REPLACE FUNCTION update_vote_counts()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF TG_OP = 'INSERT' THEN
-        -- Update vote count for the votable item
-        IF NEW.vote_type = 'upvote' THEN
-            EXECUTE format('UPDATE %I SET votes_count = votes_count + 1 WHERE id = $1', NEW.votable_type || 's')
-            USING NEW.votable_id;
-        ELSIF NEW.vote_type = 'downvote' THEN
-            EXECUTE format('UPDATE %I SET votes_count = votes_count - 1 WHERE id = $1', NEW.votable_type || 's')
-            USING NEW.votable_id;
-        END IF;
-        RETURN NEW;
-    ELSIF TG_OP = 'UPDATE' THEN
-        -- Handle vote type change
-        IF OLD.vote_type != NEW.vote_type THEN
-            IF OLD.vote_type = 'upvote' AND NEW.vote_type = 'downvote' THEN
-                EXECUTE format('UPDATE %I SET votes_count = votes_count - 2 WHERE id = $1', NEW.votable_type || 's')
-                USING NEW.votable_id;
-            ELSIF OLD.vote_type = 'downvote' AND NEW.vote_type = 'upvote' THEN
-                EXECUTE format('UPDATE %I SET votes_count = votes_count + 2 WHERE id = $1', NEW.votable_type || 's')
-                USING NEW.votable_id;
-            END IF;
-        END IF;
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        -- Remove vote count
-        IF OLD.vote_type = 'upvote' THEN
-            EXECUTE format('UPDATE %I SET votes_count = votes_count - 1 WHERE id = $1', OLD.votable_type || 's')
-            USING OLD.votable_id;
-        ELSIF OLD.vote_type = 'downvote' THEN
-            EXECUTE format('UPDATE %I SET votes_count = votes_count + 1 WHERE id = $1', OLD.votable_type || 's')
-            USING OLD.votable_id;
-        END IF;
-        RETURN OLD;
-    END IF;
-    RETURN NULL;
+    -- Logic to update vote counts on related tables
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Apply trigger to votes table
 CREATE TRIGGER update_vote_counts_trigger
     AFTER INSERT OR UPDATE OR DELETE ON votes
     FOR EACH ROW EXECUTE FUNCTION update_vote_counts();
 ```
 
 ### 6.3 Comment Count Triggers
-
 ```sql
--- Function to update comment counts
 CREATE OR REPLACE FUNCTION update_comment_counts()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF TG_OP = 'INSERT' THEN
-        UPDATE posts SET comments_count = comments_count + 1 WHERE id = NEW.post_id;
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        UPDATE posts SET comments_count = comments_count - 1 WHERE id = OLD.post_id;
-        RETURN OLD;
-    END IF;
-    RETURN NULL;
+    -- Logic to update comment counts on related tables
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Apply trigger to comments table
 CREATE TRIGGER update_comment_counts_trigger
     AFTER INSERT OR DELETE ON comments
     FOR EACH ROW EXECUTE FUNCTION update_comment_counts();
@@ -1569,94 +1400,10 @@ CREATE TRIGGER update_comment_counts_trigger
 
 ---
 
-## 7. Backup and Recovery
-
-### 7.1 Backup Strategy
-- **Daily Backups**: Automated daily backups at 2:00 AM UTC
-- **Point-in-Time Recovery**: Continuous WAL archiving
-- **Retention**: 30 days of daily backups, 12 months of weekly backups
-- **Storage**: Encrypted backup storage in multiple regions
-
-### 7.2 Recovery Procedures
-
-```sql
--- Restore from backup
-pg_restore -h localhost -U postgres -d focus_hub backup_file.sql
-
--- Point-in-time recovery
-pg_restore -h localhost -U postgres -d focus_hub --clean --if-exists backup_file.sql
-```
-
-### 7.3 Data Export
-
-```sql
--- Export specific tables
-pg_dump -h localhost -U postgres -t users -t posts focus_hub > users_posts.sql
-
--- Export with data only
-pg_dump -h localhost -U postgres --data-only focus_hub > data_only.sql
-
--- Export with schema only
-pg_dump -h localhost -U postgres --schema-only focus_hub > schema_only.sql
-```
-
----
-
-## 8. Performance Optimization
-
-### 8.1 Query Optimization
-
-```sql
--- Analyze table statistics
-ANALYZE users;
-ANALYZE posts;
-ANALYZE comments;
-ANALYZE questions;
-ANALYZE answers;
-
--- Vacuum tables
-VACUUM ANALYZE users;
-VACUUM ANALYZE posts;
-VACUUM ANALYZE comments;
-```
-
-### 8.2 Connection Pooling
-- **PgBouncer**: Connection pooling for better performance
-- **Pool Size**: 20-50 connections per pool
-- **Timeout**: 30 seconds idle timeout
-- **Load Balancing**: Round-robin distribution
-
-### 8.3 Monitoring Queries
-
-```sql
--- Check slow queries
-SELECT query, mean_time, calls, total_time
-FROM pg_stat_statements
-ORDER BY mean_time DESC
-LIMIT 10;
-
--- Check table sizes
-SELECT 
-    schemaname,
-    tablename,
-    attname,
-    n_distinct,
-    correlation
-FROM pg_stats
-WHERE schemaname = 'public'
-ORDER BY tablename, attname;
-
--- Check index usage
-SELECT 
-    schemaname,
-    tablename,
-    indexname,
-    idx_scan,
-    idx_tup_read,
-    idx_tup_fetch
-FROM pg_stat_user_indexes
-ORDER BY idx_scan DESC;
-```
+## Summary Statistics
+- **Total Tables:** 24
+- **Total Indexes:** (see above, matches schema)
+- **Total Functions/Triggers:** (see above, matches schema)
 
 ---
 
