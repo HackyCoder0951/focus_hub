@@ -26,6 +26,26 @@ export async function registerUser(email, password) {
 }
 ```
 
+**User Login**
+```js
+// Log in a user with email and password
+export async function loginUser(email, password) {
+  const { user, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  return user;
+}
+```
+
+**Forgot Password**
+```js
+// Send a password reset email
+export async function forgotPassword(email) {
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+  if (error) throw error;
+  return data;
+}
+```
+
 **Protected Route (React)**
 ```tsx
 import { useContext } from 'react';
