@@ -41,6 +41,9 @@ The successful deployment and positive user feedback highlight the platform's po
 - **Enhanced Security and Privacy:**
   - Continuously update security protocols, implement two-factor authentication, and provide users with granular privacy controls. Regular security assessments and transparent data policies will build trust and protect user information.
 
+- **Notification Features:**
+  - While notification functionality (such as in-app and email notifications) has been implemented in the current version, it is not yet fully operational or reliable. Future work will focus on ensuring robust, real-time notification delivery for all critical user actions (e.g., new messages, comments, mentions, admin alerts). Plans include improving the notification system's reliability, adding support for push notifications on web and mobile, and providing users with granular control over notification preferences. Enhanced notification features will significantly improve user engagement and responsiveness across the platform.
+
 ---
 
 ## Bibliography
