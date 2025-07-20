@@ -6,13 +6,20 @@
 ## Table of Contents
 
 1. [Database Overview](#1-database-overview)
-2. [Table Definitions](#2-table-definitions)
-3. [Relationships](#3-relationships)
-4. [Indexes](#4-indexes)
-5. [Row Level Security (RLS)](#5-row-level-security-rls)
-6. [Triggers and Functions](#6-triggers-and-functions)
-7. [Backup and Recovery](#7-backup-and-recovery)
-8. [Performance Optimization](#8-performance-optimization)
+2. [User Management Tables](#2-user-management-tables)
+3. [Social Feed Tables](#3-social-feed-tables)
+4. [Q&A Module Tables](#4-q-a-module-tables)
+5. [Chat System Tables](#5-chat-system-tables)
+6. [Resource Sharing Tables](#6-resource-sharing-tables)
+7. [Social Features Tables](#7-social-features-tables)
+8. [Notification Tables](#8-notification-tables)
+9. [Moderation Tables](#9-moderation-tables)
+10. [Relationships](#10-relationships)
+11. [Indexes](#11-indexes)
+12. [Row Level Security (RLS)](#12-row-level-security-rls)
+13. [Triggers and Functions](#13-triggers-and-functions)
+14. [Backup and Recovery](#14-backup-and-recovery)
+15. [Performance Optimization](#15-performance-optimization)
 
 ---
 
@@ -34,420 +41,9 @@
 
 ---
 
-## 2. Table Definitions
+## 2. User Management Tables
 
-<!-- Table of Contents -->
-
-1. Table 1: ai_answers
-2. Table 2: answer_comments
-3. Table 3: answer_notifications
-4. Table 4: answer_tags
-5. Table 5: answer_votes
-6. Table 6: answers
-7. Table 7: chat_members
-8. Table 8: chat_messages
-9. Table 9: chats
-10. Table 10: comment_likes
-11. Table 11: comments
-12. Table 12: content_flags
-13. Table 13: filemodels
-14. Table 14: followers
-15. Table 15: likes
-16. Table 16: notifications
-17. Table 17: posts
-18. Table 18: profiles
-19. Table 19: question_notifications
-20. Table 20: question_votes
-21. Table 21: questions
-22. Table 22: question_tags
-23. Table 23: reputation_events
-24. Table 24: user_roles
-
----
-
-### Table 1: ai_answers
-**Description:** AI-generated answers to questions.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."ai_answers" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "question_id" uuid,
-    "answer_text" text NOT NULL,
-    "model_used" text,
-    "tokens_used" integer,
-    "processing_time_ms" integer,
-    "user_feedback_rating" integer,
-    "generation_attempts" integer DEFAULT 1,
-    "created_at" timestamp with time zone DEFAULT now(),
-    "user_id" uuid,
-    "generated_by" text,
-    CONSTRAINT "ai_answers_user_feedback_rating_check" CHECK (("user_feedback_rating" >= 1 AND "user_feedback_rating" <= 5))
-);
-```
-
-**Foreign Keys:**
-- question_id → questions(id)
-- user_id → profiles(id) (ON DELETE SET NULL)
-
-**Check Constraints:**
-- user_feedback_rating must be between 1 and 5
-
----
-
-### Table 2: answer_comments
-**Description:** Comments on answers.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."answer_comments" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "answer_id" uuid,
-    "user_id" uuid,
-    "parent_comment_id" uuid,
-    "body" text NOT NULL,
-    "created_at" timestamp with time zone DEFAULT now(),
-    "updated_at" timestamp with time zone DEFAULT now()
-);
-```
-
-
-**Foreign Keys:**
-- answer_id → answers(id)
-- user_id → auth.users(id)
-- parent_comment_id → answer_comments(id)
-
----
-
-### Table 3: answer_notifications
-**Description:** Notifications for answer-related activities.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."answer_notifications" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "answer_id" uuid,
-    "user_id" uuid,
-    "notification_type" text,
-    "message" text NOT NULL,
-    "is_read" boolean DEFAULT false,
-    "related_id" uuid,
-    "created_at" timestamp with time zone DEFAULT now(),
-    CONSTRAINT "answer_notifications_notification_type_check" CHECK ("notification_type" = ANY (ARRAY['comment', 'vote', 'acceptance', 'mention']))
-);
-```
-
-**Foreign Keys:**
-- answer_id → answers(id)
-- user_id → auth.users(id)
-
-**Check Constraints:**
-- notification_type must be one of 'comment', 'vote', 'acceptance', 'mention'
-
----
-
-### Table 4: answer_tags
-**Description:** Tags associated with answers for categorization.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."answer_tags" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "answer_id" uuid,
-    "tag_name" text NOT NULL,
-    "created_at" timestamp with time zone DEFAULT now()
-);
-```
-
-**Foreign Keys:**
-- answer_id → answers(id)
-
-**Unique Constraints:**
-- (answer_id, tag_name)
-
----
-
-### Table 5: answer_votes
-**Description:** Votes (upvotes/downvotes) on answers.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."answer_votes" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "answer_id" uuid,
-    "user_id" uuid,
-    "vote_value" smallint,
-    "created_at" timestamp with time zone DEFAULT now(),
-    "updated_at" timestamp with time zone DEFAULT now(),
-    CONSTRAINT "answer_votes_vote_value_check" CHECK ("vote_value" = ANY (ARRAY[1, -1]))
-);
-```
-
-
-**Foreign Keys:**
-- answer_id → answers(id)
-- user_id → auth.users(id)
-
-**Unique Constraints:**
-- (answer_id, user_id)
-
----
-
-### Table 6: answers
-**Description:** Answers to questions.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."answers" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "question_id" uuid,
-    "user_id" uuid,
-    "body" text NOT NULL,
-    "is_accepted" boolean DEFAULT false,
-    "created_at" timestamp with time zone DEFAULT now(),
-    "updated_at" timestamp with time zone DEFAULT now()
-);
-```
-
-
-**Foreign Keys:**
-- question_id → questions(id)
-- user_id → auth.users(id)
-
----
-
-### Table 7: chat_members
-**Description:** Members of chat groups.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."chat_members" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "chat_id" uuid,
-    "user_id" uuid,
-    "joined_at" timestamp with time zone DEFAULT now() NOT NULL,
-    "is_admin" boolean DEFAULT false,
-    "typing" boolean DEFAULT false
-);
-```
-
-**Foreign Keys:**
-- chat_id → chats(id)
-- user_id → profiles(id)
-
-**Unique Constraints:**
-- (chat_id, user_id)
-
----
-
-### Table 8: chat_messages
-**Description:** Messages in chats.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."chat_messages" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "chat_id" uuid,
-    "user_id" uuid,
-    "content" text,
-    "media_url" text,
-    "created_at" timestamp with time zone DEFAULT now() NOT NULL
-);
-```
-
-
-**Foreign Keys:**
-- chat_id → chats(id)
-- user_id → profiles(id)
-
----
-
-### Table 9: chats
-**Description:** Chat groups and direct messages.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."chats" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "is_group" boolean DEFAULT false NOT NULL,
-    "name" text,
-    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-    "created_by" uuid
-);
-```
-
-
----
-
-### Table 10: comment_likes
-**Description:** Likes on comments.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."comment_likes" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "comment_id" uuid,
-    "user_id" uuid,
-    "created_at" timestamp with time zone DEFAULT now() NOT NULL
-);
-```
-
-
-**Foreign Keys:**
-- comment_id → comments(id)
-- user_id → profiles(id)
-
-**Unique Constraints:**
-- (comment_id, user_id)
-
----
-
-### Table 11: comments
-**Description:** Comments on posts, supporting threading.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."comments" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "post_id" uuid,
-    "user_id" uuid,
-    "content" text NOT NULL,
-    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-    "parent_id" uuid
-);
-```
-
-**Foreign Keys:**
-- post_id → posts(id)
-- user_id → profiles(id)
-- parent_id → comments(id)
-
----
-
-### Table 12: content_flags
-**Description:** Flags for posts or comments for moderation.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."content_flags" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "flagged_by_user_id" uuid NOT NULL,
-    "post_id" uuid,
-    "comment_id" uuid,
-    "reason" text,
-    "created_at" timestamp with time zone DEFAULT now(),
-    "status" text DEFAULT 'pending',
-    CONSTRAINT "only_one_content" CHECK ((("post_id" IS NOT NULL AND "comment_id" IS NULL) OR ("post_id" IS NULL AND "comment_id" IS NOT NULL)))
-);
-```
-
-**Foreign Keys:**
-- flagged_by_user_id → profiles(id)
-- post_id → posts(id)
-- comment_id → comments(id)
-
-**Check Constraints:**
-- Only one of post_id or comment_id can be non-null
-
----
-
-### Table 13: filemodels
-**Description:** File uploads and metadata.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."filemodels" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "user_id" uuid,
-    "file_url" text NOT NULL,
-    "file_name" text NOT NULL,
-    "file_type" text,
-    "file_size" integer,
-    "description" text,
-    "is_public" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT now() NOT NULL
-);
-```
-
-**Foreign Keys:**
-- user_id → profiles(id)
-
----
-
-### Table 14: followers
-**Description:** User following relationships.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."followers" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "follower_id" uuid,
-    "following_id" uuid,
-    "created_at" timestamp with time zone DEFAULT now() NOT NULL
-);
-```
-
-**Foreign Keys:**
-- follower_id → profiles(id)
-- following_id → profiles(id)
-
-**Unique Constraints:**
-- (follower_id, following_id)
-
----
-
-### Table 15: likes
-**Description:** Likes on posts.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."likes" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "user_id" uuid,
-    "post_id" uuid,
-    "created_at" timestamp with time zone DEFAULT now() NOT NULL
-);
-```
-
-**Foreign Keys:**
-- user_id → profiles(id)
-- post_id → posts(id)
-
-**Unique Constraints:**
-- (user_id, post_id)
-
----
-
-### Table 16: notifications
-**Description:** General notifications for users.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."notifications" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "user_id" uuid,
-    "type" text NOT NULL,
-    "data" jsonb,
-    "is_read" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT now() NOT NULL
-);
-```
-
-
-**Foreign Keys:**
-- user_id → profiles(id)
-
----
-
-### Table 17: posts
-**Description:** User posts with media support and moderation status.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."posts" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "user_id" uuid,
-    "content" text NOT NULL,
-    "media_url" text,
-    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-    "is_deleted" boolean DEFAULT false NOT NULL,
-    "file_url" text,
-    "image_url" text,
-    "flag_status" text DEFAULT 'normal'
-);
-```
-
-
-**Foreign Keys:**
-- user_id → profiles(id)
-
----
-
-### Table 18: profiles
+### Table 1: profiles
 **Description:** User profile information linked to Supabase Auth.
 
 ```sql
@@ -469,134 +65,7 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
 );
 ```
 
-**Foreign Keys:**
-- id → auth.users(id)
-
-**Check Constraints:**
-- member_type must be 'student' or 'alumni'
-
----
-
-### Table 19: question_notifications
-**Description:** Notifications for question-related activities.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."question_notifications" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "question_id" uuid,
-    "user_id" uuid,
-    "notification_type" text,
-    "message" text NOT NULL,
-    "is_read" boolean DEFAULT false,
-    "related_id" uuid,
-    "created_at" timestamp with time zone DEFAULT now(),
-    CONSTRAINT "question_notifications_notification_type_check" CHECK ("notification_type" = ANY (ARRAY['answer', 'comment', 'vote', 'best_answer']))
-);
-```
-
-
-**Foreign Keys:**
-- question_id → questions(id)
-- user_id → auth.users(id)
-
-**Check Constraints:**
-- notification_type must be one of 'answer', 'comment', 'vote', 'best_answer'
-
----
-
-### Table 20: question_votes
-**Description:** Votes (upvotes/downvotes) on questions.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."question_votes" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "question_id" uuid,
-    "user_id" uuid,
-    "vote_value" smallint,
-    "created_at" timestamp with time zone DEFAULT now(),
-    "updated_at" timestamp with time zone DEFAULT now(),
-    CONSTRAINT "question_votes_vote_value_check" CHECK ("vote_value" = ANY (ARRAY[1, -1]))
-);
-```
-
-
-**Foreign Keys:**
-- question_id → questions(id)
-- user_id → auth.users(id)
-
-**Unique Constraints:**
-- (question_id, user_id)
-
----
-
-### Table 21: questions
-**Description:** Main questions table for the Q&A system.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."questions" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "user_id" uuid,
-    "title" text NOT NULL,
-    "body" text NOT NULL,
-    "category" text,
-    "status" text DEFAULT 'open',
-    "best_answer_id" uuid,
-    "view_count" integer DEFAULT 0,
-    "created_at" timestamp with time zone DEFAULT now(),
-    "updated_at" timestamp with time zone DEFAULT now(),
-    CONSTRAINT "questions_status_check" CHECK ("status" = ANY (ARRAY['open', 'closed', 'duplicate']))
-);
-```
-
-
-**Foreign Keys:**
-- user_id → profiles(id)
-
-**Check Constraints:**
-- status must be 'open', 'closed', or 'duplicate'
-
----
-
-### Table 22: question_tags
-**Description:** Tags associated with questions for categorization.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."question_tags" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "question_id" uuid,
-    "tag_name" text NOT NULL,
-    "created_at" timestamp with time zone DEFAULT now()
-);
-```
-
-**Foreign Keys:**
-- question_id → questions(id)
-
-**Unique Constraints:**
-- (question_id, tag_name)
-
----
-
-### Table 23: reputation_events
-**Description:** Tracks user reputation changes.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."reputation_events" (
-    "id" integer NOT NULL,
-    "user_id" uuid,
-    "type" text NOT NULL,
-    "value" integer NOT NULL,
-    "related_id" integer,
-    "created_at" timestamp with time zone DEFAULT now()
-);
-```
-
-**Foreign Keys:**
-- user_id → auth.users(id)
-
----
-
-### Table 24: user_roles
+### Table 2: user_roles
 **Description:** Role-based access control for admin and user permissions.
 
 ```sql
@@ -604,19 +73,407 @@ CREATE TABLE IF NOT EXISTS "public"."user_roles" (
     "id" uuid DEFAULT gen_random_uuid() NOT NULL,
     "user_id" uuid NOT NULL,
     "role" app_role DEFAULT 'user' NOT NULL,
-    "created_at" timestamp with time zone DEFAULT now() NOT NULL
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "user_roles_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "user_roles_user_id_role_key" UNIQUE ("user_id", "role"),
+    CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
 );
 ```
 
+## Social Feed Tables
 
-**Foreign Keys:**
-- user_id → auth.users(id)
+### Table 3: posts
+**Description:** User posts with media support and moderation status.
 
-**Unique Constraints:**
-- (user_id, role)
+```sql
+CREATE TABLE IF NOT EXISTS "public"."posts" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid,
+    "content" text NOT NULL,
+    "media_url" text,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "is_deleted" boolean DEFAULT false NOT NULL,
+    "file_url" text,
+    "image_url" text,
+    "flag_status" text DEFAULT 'normal',
+    CONSTRAINT "posts_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "posts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
 
----
+### Table 4: comments
+**Description:** Comments on posts, supporting threading.
 
+```sql
+CREATE TABLE IF NOT EXISTS "public"."comments" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "post_id" uuid,
+    "user_id" uuid,
+    "content" text NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "parent_id" uuid,
+    CONSTRAINT "comments_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "comments_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE CASCADE,
+    CONSTRAINT "comments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE,
+    CONSTRAINT "comments_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "public"."comments"("id") ON DELETE CASCADE
+);
+```
+
+### Table 5: likes
+**Description:** Likes on posts.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."likes" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid,
+    "post_id" uuid,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "likes_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "likes_user_id_post_id_key" UNIQUE ("user_id", "post_id"),
+    CONSTRAINT "likes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE,
+    CONSTRAINT "likes_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE CASCADE
+);
+```
+
+### Table 6: comment_likes
+**Description:** Likes on comments.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."comment_likes" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "comment_id" uuid,
+    "user_id" uuid,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "comment_likes_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "comment_likes_comment_id_user_id_key" UNIQUE ("comment_id", "user_id"),
+    CONSTRAINT "comment_likes_comment_id_fkey" FOREIGN KEY ("comment_id") REFERENCES "public"."comments"("id") ON DELETE CASCADE,
+    CONSTRAINT "comment_likes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+## Q&A Module Tables
+
+### Table 7: questions
+**Description:** Questions posted by users.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."questions" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid NOT NULL,
+    "title" text NOT NULL,
+    "body" text NOT NULL,
+    "category" text,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "status" text DEFAULT 'active',
+    "view_count" bigint DEFAULT 0 NOT NULL,
+    CONSTRAINT "questions_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "questions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+### Table 8: answers
+**Description:** Answers to questions posted by users.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."answers" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "question_id" uuid NOT NULL,
+    "user_id" uuid NOT NULL,
+    "body" text NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "is_accepted" boolean DEFAULT false NOT NULL,
+    CONSTRAINT "answers_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "answers_question_id_fkey" FOREIGN KEY ("question_id") REFERENCES "public"."questions"("id") ON DELETE CASCADE,
+    CONSTRAINT "answers_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+### Table 9: question_votes
+**Description:** Votes on questions.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."question_votes" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "question_id" uuid NOT NULL,
+    "user_id" uuid NOT NULL,
+    "vote_value" integer NOT NULL,
+    CONSTRAINT "question_votes_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "question_votes_question_id_fkey" FOREIGN KEY ("question_id") REFERENCES "public"."questions"("id") ON DELETE CASCADE,
+    CONSTRAINT "question_votes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+### Table 10: answer_votes
+**Description:** Votes on answers.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."answer_votes" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "answer_id" uuid NOT NULL,
+    "user_id" uuid NOT NULL,
+    "vote_value" integer NOT NULL,
+    CONSTRAINT "answer_votes_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "answer_votes_answer_id_fkey" FOREIGN KEY ("answer_id") REFERENCES "public"."answers"("id") ON DELETE CASCADE,
+    CONSTRAINT "answer_votes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+### Table 11: question_tags
+**Description:** Tags associated with questions.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."question_tags" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "question_id" uuid NOT NULL,
+    "tag_name" text NOT NULL,
+    CONSTRAINT "question_tags_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "question_tags_question_id_fkey" FOREIGN KEY ("question_id") REFERENCES "public"."questions"("id") ON DELETE CASCADE
+);
+```
+
+### Table 12: ai_answers
+**Description:** AI-generated answers to questions.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."ai_answers" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "question_id" uuid NOT NULL,
+    "user_id" uuid NOT NULL,
+    "body" text NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "ai_answers_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "ai_answers_question_id_fkey" FOREIGN KEY ("question_id") REFERENCES "public"."questions"("id") ON DELETE CASCADE,
+    CONSTRAINT "ai_answers_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+### Table 13: answer_comments
+**Description:** Comments on answers.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."answer_comments" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "answer_id" uuid NOT NULL,
+    "user_id" uuid NOT NULL,
+    "content" text NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "parent_comment_id" uuid,
+    CONSTRAINT "answer_comments_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "answer_comments_answer_id_fkey" FOREIGN KEY ("answer_id") REFERENCES "public"."answers"("id") ON DELETE CASCADE,
+    CONSTRAINT "answer_comments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE,
+    CONSTRAINT "answer_comments_parent_comment_id_fkey" FOREIGN KEY ("parent_comment_id") REFERENCES "public"."answer_comments"("id") ON DELETE CASCADE
+);
+```
+
+### Table 14: answer_tags
+**Description:** Tags associated with answers.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."answer_tags" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "answer_id" uuid NOT NULL,
+    "tag_name" text NOT NULL,
+    CONSTRAINT "answer_tags_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "answer_tags_answer_id_fkey" FOREIGN KEY ("answer_id") REFERENCES "public"."answers"("id") ON DELETE CASCADE
+);
+```
+
+### Table 15: votes
+**Description:** Votes on answers.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."votes" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid NOT NULL,
+    "vote_value" integer NOT NULL,
+    CONSTRAINT "votes_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "votes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+### Table 16: reputation_events
+**Description:** Events related to user reputation.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."reputation_events" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid NOT NULL,
+    "event_type" text NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "reputation_events_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "reputation_events_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+### Table 17: tags
+**Description:** Tags associated with questions and answers.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."tags" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "tag_name" text NOT NULL,
+    CONSTRAINT "tags_pkey" PRIMARY KEY ("id")
+);
+```
+
+## Chat System Tables
+
+### Table 18: chats
+**Description:** Chat conversations between users.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."chats" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "chats_pkey" PRIMARY KEY ("id")
+);
+```
+
+### Table 19: chat_members
+**Description:** Members of chat conversations.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."chat_members" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "chat_id" uuid NOT NULL,
+    "user_id" uuid NOT NULL,
+    "is_admin" boolean DEFAULT false NOT NULL,
+    "joined_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "chat_members_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "chat_members_chat_id_fkey" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE CASCADE,
+    CONSTRAINT "chat_members_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+### Table 20: chat_messages
+**Description:** Messages in chat conversations.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."chat_messages" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "chat_id" uuid NOT NULL,
+    "user_id" uuid NOT NULL,
+    "content" text NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "chat_messages_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "chat_messages_chat_id_fkey" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE CASCADE,
+    CONSTRAINT "chat_messages_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+## Resource Sharing Tables
+
+### Table 21: filemodels
+**Description:** Files and models associated with user content.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."filemodels" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid NOT NULL,
+    "file_name" text NOT NULL,
+    "description" text,
+    "file_url" text,
+    "image_url" text,
+    "is_public" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "filemodels_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "filemodels_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+## Social Features Tables
+
+### Table 22: followers
+**Description:** Relationships between users.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."followers" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "follower_id" uuid NOT NULL,
+    "following_id" uuid NOT NULL,
+    CONSTRAINT "followers_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "followers_follower_id_fkey" FOREIGN KEY ("follower_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE,
+    CONSTRAINT "followers_following_id_fkey" FOREIGN KEY ("following_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+## Notification Tables
+
+### Table 23: notifications
+**Description:** Notifications for users.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."notifications" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid NOT NULL,
+    "notification_type" text NOT NULL,
+    "message" text NOT NULL,
+    "is_read" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "notifications_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+### Table 24: question_notifications
+**Description:** Notifications related to questions.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."question_notifications" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "question_id" uuid NOT NULL,
+    "user_id" uuid NOT NULL,
+    "notification_type" text NOT NULL,
+    "message" text NOT NULL,
+    "is_read" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "question_notifications_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "question_notifications_question_id_fkey" FOREIGN KEY ("question_id") REFERENCES "public"."questions"("id") ON DELETE CASCADE,
+    CONSTRAINT "question_notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+### Table 25: answer_notifications
+**Description:** Notifications related to answers.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."answer_notifications" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "answer_id" uuid NOT NULL,
+    "user_id" uuid NOT NULL,
+    "notification_type" text NOT NULL,
+    "message" text NOT NULL,
+    "is_read" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "answer_notifications_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "answer_notifications_answer_id_fkey" FOREIGN KEY ("answer_id") REFERENCES "public"."answers"("id") ON DELETE CASCADE,
+    CONSTRAINT "answer_notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE
+);
+```
+
+## Moderation Tables
+
+### Table 26: content_flags
+**Description:** Flags related to content.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."content_flags" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "comment_id" uuid,
+    "flagged_by_user_id" uuid,
+    "post_id" uuid,
+    CONSTRAINT "content_flags_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "content_flags_comment_id_fkey" FOREIGN KEY ("comment_id") REFERENCES "public"."comments"("id"),
+    CONSTRAINT "content_flags_flagged_by_user_id_fkey" FOREIGN KEY ("flagged_by_user_id") REFERENCES "public"."profiles"("id"),
+    CONSTRAINT "content_flags_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE CASCADE
+);
+```
 
 ## 3. Relationships (SQL)
 ```sql
