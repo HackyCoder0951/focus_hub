@@ -371,4 +371,12 @@ Below is the documentation for all tables in the Focus Hub database, including c
 - tags_pkey (id)
 - tags_name_key (name)
 
---- 
+---
+
+## Views: Name | Definition (full SQL in code block)
+
+## Functions: Name | Definition (full SQL in code block)
+
+## Triggers: Name | Table | Event | Function | Definition (full SQL in code block)
+
+## RLS Policies: Table | Policy Name | Command | Using/With Check Expression (one row per policy) 
