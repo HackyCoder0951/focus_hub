@@ -60,6 +60,62 @@ export function ProtectedRoute({ children }) {
 
 ---
 
+### Short React Components for Auth Flows
+
+**Login Form (React)**
+```jsx
+import { useState } from 'react';
+import { loginUser } from '../api/auth';
+
+export function LoginForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  return (
+    <form onSubmit={async e => { e.preventDefault(); await loginUser(email, password); }}>
+      <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" />
+      <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" />
+      <button type="submit">Login</button>
+    </form>
+  );
+}
+```
+
+**Registration Form (React)**
+```jsx
+import { useState } from 'react';
+import { registerUser } from '../api/auth';
+
+export function RegisterForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  return (
+    <form onSubmit={async e => { e.preventDefault(); await registerUser(email, password); }}>
+      <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" />
+      <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" />
+      <button type="submit">Register</button>
+    </form>
+  );
+}
+```
+
+**Forgot Password Form (React)**
+```jsx
+import { useState } from 'react';
+import { forgotPassword } from '../api/auth';
+
+export function ForgotPasswordForm() {
+  const [email, setEmail] = useState('');
+  return (
+    <form onSubmit={async e => { e.preventDefault(); await forgotPassword(email); }}>
+      <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" />
+      <button type="submit">Send Reset Link</button>
+    </form>
+  );
+}
+```
+
+---
+
 ## 2. Social Feed
 
 **Create Post API**
