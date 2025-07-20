@@ -67,401 +67,6 @@
 
 ### Table 1: ai_answers
 **Description:** AI-generated answers to questions.
-```sql
-CREATE TABLE IF NOT EXISTS "public"."ai_answers" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "question_id" uuid,
-    "answer_text" text NOT NULL,
-    "model_used" text,
-    "tokens_used" integer,
-    "processing_time_ms" integer,
-    "user_feedback_rating" integer,
-    "generation_attempts" integer DEFAULT 1,
-    "created_at" timestamp with time zone DEFAULT now(),
-    "user_id" uuid,
-    "generated_by" text,
-    CONSTRAINT "ai_answers_user_feedback_rating_check" CHECK (("user_feedback_rating" >= 1 AND "user_feedback_rating" <= 5))
-);
-```
-
-### Table 2: answer_comments
-**Description:** Comments on answers.
-```sql
-CREATE TABLE IF NOT EXISTS "public"."answer_comments" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "answer_id" uuid,
-    "user_id" uuid,
-    "parent_comment_id" uuid,
-    "body" text NOT NULL,
-    "created_at" timestamp with time zone DEFAULT now(),
-    "updated_at" timestamp with time zone DEFAULT now()
-);
-```
-
-<!-- Repeat for all tables up to Table 24, using the same format: numbered heading, description, and CREATE TABLE SQL. -->
-
-### 2.1 Users Table
-```sql
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    full_name VARCHAR(255) NOT NULL,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    avatar_url TEXT,
-    bio TEXT,
-    role user_role DEFAULT 'student',
-    is_verified BOOLEAN DEFAULT false,
-    is_active BOOLEAN DEFAULT true,
-    last_login TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- User roles enum
-CREATE TYPE user_role AS ENUM ('student', 'educator', 'admin');
-```
-
-**Columns:**
-- `id`: Unique identifier (UUID)
-- `email`: User's email address (unique)
-- `full_name`: User's full name
-- `username`: Unique username
-- `avatar_url`: Profile picture URL
-- `bio`: User biography
-- `role`: User role (student, educator, admin)
-- `is_verified`: Email verification status
-- `is_active`: Account status
-- `last_login`: Last login timestamp
-- `created_at`: Account creation timestamp
-- `updated_at`: Last update timestamp
-
-### 2.2 Posts Table
-```sql
-CREATE TABLE posts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    content TEXT NOT NULL,
-    category VARCHAR(50),
-    tags TEXT[],
-    likes_count INTEGER DEFAULT 0,
-    comments_count INTEGER DEFAULT 0,
-    is_published BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-**Columns:**
-- `id`: Unique identifier (UUID)
-- `author_id`: Reference to users table
-- `title`: Post title
-- `content`: Post content
-- `category`: Post category
-- `tags`: Array of tags
-- `likes_count`: Number of likes
-- `comments_count`: Number of comments
-- `is_published`: Publication status
-- `created_at`: Creation timestamp
-- `updated_at`: Last update timestamp
-
-### 2.3 Comments Table
-```sql
-CREATE TABLE comments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
-    author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    parent_id UUID REFERENCES comments(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    likes_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-**Columns:**
-- `id`: Unique identifier (UUID)
-- `post_id`: Reference to posts table
-- `author_id`: Reference to users table
-- `parent_id`: Parent comment for replies
-- `content`: Comment content
-- `likes_count`: Number of likes
-- `created_at`: Creation timestamp
-- `updated_at`: Last update timestamp
-
-### 2.4 Questions Table
-```sql
-CREATE TABLE questions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    content TEXT NOT NULL,
-    category VARCHAR(50),
-    tags TEXT[],
-    status question_status DEFAULT 'open',
-    votes_count INTEGER DEFAULT 0,
-    answers_count INTEGER DEFAULT 0,
-    views_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Question status enum
-CREATE TYPE question_status AS ENUM ('open', 'answered', 'closed');
-```
-
-**Columns:**
-- `id`: Unique identifier (UUID)
-- `author_id`: Reference to users table
-- `title`: Question title
-- `content`: Question content
-- `category`: Question category
-- `tags`: Array of tags
-- `status`: Question status (open, answered, closed)
-- `votes_count`: Number of votes
-- `answers_count`: Number of answers
-- `views_count`: Number of views
-- `created_at`: Creation timestamp
-- `updated_at`: Last update timestamp
-
-### 2.5 AI Answers Table
-```sql
-CREATE TABLE ai_answers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    question_id UUID REFERENCES questions(id) ON DELETE CASCADE,
-    answer_text TEXT NOT NULL,
-    confidence_score DECIMAL(3,2) CHECK (confidence_score >= 0 AND confidence_score <= 1),
-    model_used TEXT,
-    tokens_used INTEGER,
-    processing_time_ms INTEGER,
-    relevance_score DECIMAL(3,2),
-    completeness_score DECIMAL(3,2),
-    user_feedback_rating INTEGER CHECK (user_feedback_rating BETWEEN 1 AND 5),
-    generation_attempts INTEGER DEFAULT 1,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-**Columns:**
-- `id`: Unique identifier (UUID)
-- `question_id`: Reference to questions table
-- `answer_text`: AI-generated answer content
-- `confidence_score`: AI model confidence score (0-1)
-- `model_used`: AI model identifier (e.g., "llama3-8b-8192")
-- `tokens_used`: Number of tokens consumed
-- `processing_time_ms`: Time taken to generate answer
-- `relevance_score`: Relevance score (0-1)
-- `completeness_score`: Completeness score (0-1)
-- `user_feedback_rating`: User rating (1-5)
-- `generation_attempts`: Number of generation attempts
-- `created_at`: Creation timestamp
-
-### 2.6 Answers Table
-```sql
-CREATE TABLE answers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
-    author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    is_accepted BOOLEAN DEFAULT false,
-    votes_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-**Columns:**
-- `id`: Unique identifier (UUID)
-- `question_id`: Reference to questions table
-- `author_id`: Reference to users table
-- `content`: Answer content
-- `is_accepted`: Accepted answer status
-- `votes_count`: Number of votes
-- `created_at`: Creation timestamp
-- `updated_at`: Last update timestamp
-
-### 2.6 Chat Rooms Table
-```sql
-CREATE TABLE chat_rooms (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    type room_type DEFAULT 'group',
-    created_by UUID NOT NULL REFERENCES users(id),
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Room type enum
-CREATE TYPE room_type AS ENUM ('direct', 'group');
-```
-
-**Columns:**
-- `id`: Unique identifier (UUID)
-- `name`: Room name
-- `description`: Room description
-- `type`: Room type (direct, group)
-- `created_by`: Room creator
-- `is_active`: Room status
-- `created_at`: Creation timestamp
-- `updated_at`: Last update timestamp
-
-### 2.7 Chat Messages Table
-```sql
-CREATE TABLE chat_messages (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    room_id UUID NOT NULL REFERENCES chat_rooms(id) ON DELETE CASCADE,
-    sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    message_type message_type DEFAULT 'text',
-    file_url TEXT,
-    is_read BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Message type enum
-CREATE TYPE message_type AS ENUM ('text', 'image', 'file', 'system');
-```
-
-**Columns:**
-- `id`: Unique identifier (UUID)
-- `room_id`: Reference to chat_rooms table
-- `sender_id`: Reference to users table
-- `content`: Message content
-- `message_type`: Type of message
-- `file_url`: File URL for file messages
-- `is_read`: Read status
-- `created_at`: Creation timestamp
-
-### 2.8 Resources Table
-```sql
-CREATE TABLE resources (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    file_url TEXT NOT NULL,
-    file_name VARCHAR(255) NOT NULL,
-    file_size BIGINT NOT NULL,
-    file_type VARCHAR(50) NOT NULL,
-    category VARCHAR(50),
-    tags TEXT[],
-    downloads_count INTEGER DEFAULT 0,
-    is_public BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-**Columns:**
-- `id`: Unique identifier (UUID)
-- `title`: Resource title
-- `description`: Resource description
-- `author_id`: Reference to users table
-- `file_url`: File storage URL
-- `file_name`: Original file name
-- `file_size`: File size in bytes
-- `file_type`: File MIME type
-- `category`: Resource category
-- `tags`: Array of tags
-- `downloads_count`: Number of downloads
-- `is_public`: Public visibility
-- `created_at`: Creation timestamp
-- `updated_at`: Last update timestamp
-
-### 2.9 Votes Table
-```sql
-CREATE TABLE votes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    votable_type VARCHAR(20) NOT NULL,
-    votable_id UUID NOT NULL,
-    vote_type vote_type NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(user_id, votable_type, votable_id)
-);
-
--- Vote type enum
-CREATE TYPE vote_type AS ENUM ('upvote', 'downvote');
-```
-
-**Columns:**
-- `id`: Unique identifier (UUID)
-- `user_id`: Reference to users table
-- `votable_type`: Type of votable item (post, comment, question, answer)
-- `votable_id`: ID of votable item
-- `vote_type`: Type of vote (upvote, downvote)
-- `created_at`: Creation timestamp
-
-### 2.10 Followers Table
-```sql
-CREATE TABLE followers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    follower_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    following_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(follower_id, following_id)
-);
-```
-
-**Columns:**
-- `id`: Unique identifier (UUID)
-- `follower_id`: User who is following
-- `following_id`: User being followed
-- `created_at`: Creation timestamp
-
-### 2.11 Chat Room Participants Table
-```sql
-CREATE TABLE chat_room_participants (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    room_id UUID NOT NULL REFERENCES chat_rooms(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role participant_role DEFAULT 'member',
-    joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(room_id, user_id)
-);
-
--- Participant role enum
-CREATE TYPE participant_role AS ENUM ('member', 'moderator', 'admin');
-```
-
-**Columns:**
-- `id`: Unique identifier (UUID)
-- `room_id`: Reference to chat_rooms table
-- `user_id`: Reference to users table
-- `role`: Participant role
-- `joined_at`: Join timestamp
-
-### 2.12 Notifications Table
-```sql
-CREATE TABLE notifications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    type notification_type NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    data JSONB,
-    is_read BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Notification type enum
-CREATE TYPE notification_type AS ENUM ('like', 'comment', 'follow', 'answer', 'mention', 'system');
-```
-
-**Columns:**
-- `id`: Unique identifier (UUID)
-- `user_id`: Reference to users table
-- `type`: Notification type
-- `title`: Notification title
-- `message`: Notification message
-- `data`: Additional data (JSON)
-- `is_read`: Read status
-- `created_at`: Creation timestamp
-
-### Table: ai_answers
-**Description:** AI-generated answers to questions.
 
 ```sql
 CREATE TABLE IF NOT EXISTS "public"."ai_answers" (
@@ -489,7 +94,7 @@ CREATE TABLE IF NOT EXISTS "public"."ai_answers" (
 
 ---
 
-### Table: answer_comments
+### Table 2: answer_comments
 **Description:** Comments on answers.
 
 ```sql
@@ -512,7 +117,7 @@ CREATE TABLE IF NOT EXISTS "public"."answer_comments" (
 
 ---
 
-### Table: answer_notifications
+### Table 3: answer_notifications
 **Description:** Notifications for answer-related activities.
 
 ```sql
@@ -538,7 +143,7 @@ CREATE TABLE IF NOT EXISTS "public"."answer_notifications" (
 
 ---
 
-### Table: answer_tags
+### Table 4: answer_tags
 **Description:** Tags associated with answers for categorization.
 
 ```sql
@@ -558,7 +163,7 @@ CREATE TABLE IF NOT EXISTS "public"."answer_tags" (
 
 ---
 
-### Table: answer_votes
+### Table 5: answer_votes
 **Description:** Votes (upvotes/downvotes) on answers.
 
 ```sql
@@ -583,7 +188,7 @@ CREATE TABLE IF NOT EXISTS "public"."answer_votes" (
 
 ---
 
-### Table: answers
+### Table 6: answers
 **Description:** Answers to questions.
 
 ```sql
@@ -605,7 +210,7 @@ CREATE TABLE IF NOT EXISTS "public"."answers" (
 
 ---
 
-### Table: chat_members
+### Table 7: chat_members
 **Description:** Members of chat groups.
 
 ```sql
@@ -628,7 +233,7 @@ CREATE TABLE IF NOT EXISTS "public"."chat_members" (
 
 ---
 
-### Table: chat_messages
+### Table 8: chat_messages
 **Description:** Messages in chats.
 
 ```sql
@@ -649,7 +254,7 @@ CREATE TABLE IF NOT EXISTS "public"."chat_messages" (
 
 ---
 
-### Table: chats
+### Table 9: chats
 **Description:** Chat groups and direct messages.
 
 ```sql
@@ -665,7 +270,7 @@ CREATE TABLE IF NOT EXISTS "public"."chats" (
 
 ---
 
-### Table: comment_likes
+### Table 10: comment_likes
 **Description:** Likes on comments.
 
 ```sql
@@ -687,7 +292,7 @@ CREATE TABLE IF NOT EXISTS "public"."comment_likes" (
 
 ---
 
-### Table: comments
+### Table 11: comments
 **Description:** Comments on posts, supporting threading.
 
 ```sql
@@ -708,7 +313,7 @@ CREATE TABLE IF NOT EXISTS "public"."comments" (
 
 ---
 
-### Table: content_flags
+### Table 12: content_flags
 **Description:** Flags for posts or comments for moderation.
 
 ```sql
@@ -734,7 +339,7 @@ CREATE TABLE IF NOT EXISTS "public"."content_flags" (
 
 ---
 
-### Table: filemodels
+### Table 13: filemodels
 **Description:** File uploads and metadata.
 
 ```sql
@@ -756,7 +361,7 @@ CREATE TABLE IF NOT EXISTS "public"."filemodels" (
 
 ---
 
-### Table: followers
+### Table 14: followers
 **Description:** User following relationships.
 
 ```sql
@@ -777,7 +382,7 @@ CREATE TABLE IF NOT EXISTS "public"."followers" (
 
 ---
 
-### Table: likes
+### Table 15: likes
 **Description:** Likes on posts.
 
 ```sql
@@ -798,7 +403,7 @@ CREATE TABLE IF NOT EXISTS "public"."likes" (
 
 ---
 
-### Table: notifications
+### Table 16: notifications
 **Description:** General notifications for users.
 
 ```sql
@@ -818,7 +423,7 @@ CREATE TABLE IF NOT EXISTS "public"."notifications" (
 
 ---
 
-### Table: posts
+### Table 17: posts
 **Description:** User posts with media support and moderation status.
 
 ```sql
@@ -842,7 +447,7 @@ CREATE TABLE IF NOT EXISTS "public"."posts" (
 
 ---
 
-### Table: profiles
+### Table 18: profiles
 **Description:** User profile information linked to Supabase Auth.
 
 ```sql
@@ -872,7 +477,7 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
 
 ---
 
-### Table: question_notifications
+### Table 19: question_notifications
 **Description:** Notifications for question-related activities.
 
 ```sql
@@ -899,7 +504,7 @@ CREATE TABLE IF NOT EXISTS "public"."question_notifications" (
 
 ---
 
-### Table: question_votes
+### Table 20: question_votes
 **Description:** Votes (upvotes/downvotes) on questions.
 
 ```sql
@@ -924,7 +529,7 @@ CREATE TABLE IF NOT EXISTS "public"."question_votes" (
 
 ---
 
-### Table: questions
+### Table 21: questions
 **Description:** Main questions table for the Q&A system.
 
 ```sql
@@ -952,7 +557,7 @@ CREATE TABLE IF NOT EXISTS "public"."questions" (
 
 ---
 
-### Table: question_tags
+### Table 22: question_tags
 **Description:** Tags associated with questions for categorization.
 
 ```sql
@@ -972,7 +577,7 @@ CREATE TABLE IF NOT EXISTS "public"."question_tags" (
 
 ---
 
-### Table: reputation_events
+### Table 23: reputation_events
 **Description:** Tracks user reputation changes.
 
 ```sql
@@ -991,24 +596,7 @@ CREATE TABLE IF NOT EXISTS "public"."reputation_events" (
 
 ---
 
-### Table: tags
-**Description:** Global tags for categorization.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."tags" (
-    "id" integer NOT NULL,
-    "name" text NOT NULL,
-    "created_at" timestamp with time zone DEFAULT now()
-);
-```
-
-
-**Unique Constraints:**
-- name
-
----
-
-### Table: user_roles
+### Table 24: user_roles
 **Description:** Role-based access control for admin and user permissions.
 
 ```sql
@@ -1026,31 +614,6 @@ CREATE TABLE IF NOT EXISTS "public"."user_roles" (
 
 **Unique Constraints:**
 - (user_id, role)
-
----
-
-### Table: votes
-**Description:** Legacy votes table for questions and answers.
-
-```sql
-CREATE TABLE IF NOT EXISTS "public"."votes" (
-    "id" integer NOT NULL,
-    "user_id" uuid,
-    "target_id" integer NOT NULL,
-    "target_type" text,
-    "value" smallint,
-    "created_at" timestamp with time zone DEFAULT now(),
-    CONSTRAINT "votes_target_type_check" CHECK ("target_type" = ANY (ARRAY['question', 'answer'])),
-    CONSTRAINT "votes_value_check" CHECK ("value" = ANY (ARRAY[1, -1]))
-);
-```
-
-
-**Foreign Keys:**
-- user_id → auth.users(id)
-
-**Unique Constraints:**
-- (user_id, target_id, target_type)
 
 ---
 
