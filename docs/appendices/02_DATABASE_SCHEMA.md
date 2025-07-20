@@ -36,6 +36,71 @@
 
 ## 2. Table Definitions
 
+<!-- Table of Contents -->
+
+1. Table 1: ai_answers
+2. Table 2: answer_comments
+3. Table 3: answer_notifications
+4. Table 4: answer_tags
+5. Table 5: answer_votes
+6. Table 6: answers
+7. Table 7: chat_members
+8. Table 8: chat_messages
+9. Table 9: chats
+10. Table 10: comment_likes
+11. Table 11: comments
+12. Table 12: content_flags
+13. Table 13: filemodels
+14. Table 14: followers
+15. Table 15: likes
+16. Table 16: notifications
+17. Table 17: posts
+18. Table 18: profiles
+19. Table 19: question_notifications
+20. Table 20: question_votes
+21. Table 21: questions
+22. Table 22: question_tags
+23. Table 23: reputation_events
+24. Table 24: user_roles
+25. Table 25: votes
+
+---
+
+### Table 1: ai_answers
+**Description:** AI-generated answers to questions.
+```sql
+CREATE TABLE IF NOT EXISTS "public"."ai_answers" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "question_id" uuid,
+    "answer_text" text NOT NULL,
+    "model_used" text,
+    "tokens_used" integer,
+    "processing_time_ms" integer,
+    "user_feedback_rating" integer,
+    "generation_attempts" integer DEFAULT 1,
+    "created_at" timestamp with time zone DEFAULT now(),
+    "user_id" uuid,
+    "generated_by" text,
+    CONSTRAINT "ai_answers_user_feedback_rating_check" CHECK (("user_feedback_rating" >= 1 AND "user_feedback_rating" <= 5))
+);
+```
+
+### Table 2: answer_comments
+**Description:** Comments on answers.
+```sql
+CREATE TABLE IF NOT EXISTS "public"."answer_comments" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "answer_id" uuid,
+    "user_id" uuid,
+    "parent_comment_id" uuid,
+    "body" text NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now(),
+    "updated_at" timestamp with time zone DEFAULT now()
+);
+```
+
+<!-- Repeat for all tables up to Table 24, using the same format: numbered heading, description, and CREATE TABLE SQL. -->
+
 ### 2.1 Users Table
 ```sql
 CREATE TABLE users (
@@ -416,20 +481,6 @@ CREATE TABLE IF NOT EXISTS "public"."ai_answers" (
 );
 ```
 
-| Column                | Data Type      | Constraints/Description                                 |
-|-----------------------|---------------|---------------------------------------------------------|
-| id                    | uuid          | PK, DEFAULT gen_random_uuid(), NOT NULL                 |
-| question_id           | uuid          | FK → questions(id)                                      |
-| answer_text           | text          | NOT NULL                                               |
-| model_used            | text          |                                                        |
-| tokens_used           | integer       |                                                        |
-| processing_time_ms    | integer       |                                                        |
-| user_feedback_rating  | integer       | CHECK (1 <= value <= 5)                                |
-| generation_attempts   | integer       | DEFAULT 1                                              |
-| created_at            | timestamptz   | DEFAULT now()                                          |
-| user_id               | uuid          | FK → profiles(id), ON DELETE SET NULL                  |
-| generated_by          | text          |                                                        |
-
 **Foreign Keys:**
 - question_id → questions(id)
 - user_id → profiles(id) (ON DELETE SET NULL)
@@ -454,15 +505,6 @@ CREATE TABLE IF NOT EXISTS "public"."answer_comments" (
 );
 ```
 
-| Column             | Data Type    | Constraints/Description                |
-|--------------------|-------------|----------------------------------------|
-| id                 | uuid        | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| answer_id          | uuid        | FK → answers(id)                       |
-| user_id            | uuid        | FK → auth.users(id)                    |
-| parent_comment_id  | uuid        | FK → answer_comments(id)               |
-| body               | text        | NOT NULL                               |
-| created_at         | timestamptz | DEFAULT now()                          |
-| updated_at         | timestamptz | DEFAULT now()                          |
 
 **Foreign Keys:**
 - answer_id → answers(id)
@@ -488,17 +530,6 @@ CREATE TABLE IF NOT EXISTS "public"."answer_notifications" (
 );
 ```
 
-| Column             | Data Type    | Constraints/Description                |
-|--------------------|-------------|----------------------------------------|
-| id                 | uuid        | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| answer_id          | uuid        | FK → answers(id)                       |
-| user_id            | uuid        | FK → auth.users(id)                    |
-| notification_type  | text        | CHECK (in 'comment','vote','acceptance','mention') |
-| message            | text        | NOT NULL                               |
-| is_read            | boolean     | DEFAULT false                          |
-| related_id         | uuid        |                                        |
-| created_at         | timestamptz | DEFAULT now()                          |
-
 **Foreign Keys:**
 - answer_id → answers(id)
 - user_id → auth.users(id)
@@ -519,13 +550,6 @@ CREATE TABLE IF NOT EXISTS "public"."answer_tags" (
     "created_at" timestamp with time zone DEFAULT now()
 );
 ```
-
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| answer_id   | uuid         | FK → answers(id)                       |
-| tag_name    | text         | NOT NULL                               |
-| created_at  | timestamptz  | DEFAULT now()                          |
 
 **Foreign Keys:**
 - answer_id → answers(id)
@@ -550,14 +574,6 @@ CREATE TABLE IF NOT EXISTS "public"."answer_votes" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| answer_id   | uuid         | FK → answers(id)                       |
-| user_id     | uuid         | FK → auth.users(id)                    |
-| vote_value  | smallint     | CHECK (1 or -1)                        |
-| created_at  | timestamptz  | DEFAULT now()                          |
-| updated_at  | timestamptz  | DEFAULT now()                          |
 
 **Foreign Keys:**
 - answer_id → answers(id)
@@ -583,15 +599,6 @@ CREATE TABLE IF NOT EXISTS "public"."answers" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| question_id | uuid         | FK → questions(id)                     |
-| user_id     | uuid         | FK → auth.users(id)                    |
-| body        | text         | NOT NULL                               |
-| is_accepted | boolean      | DEFAULT false                          |
-| created_at  | timestamptz  | DEFAULT now()                          |
-| updated_at  | timestamptz  | DEFAULT now()                          |
 
 **Foreign Keys:**
 - question_id → questions(id)
@@ -612,15 +619,6 @@ CREATE TABLE IF NOT EXISTS "public"."chat_members" (
     "typing" boolean DEFAULT false
 );
 ```
-
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| chat_id     | uuid         | FK → chats(id)                         |
-| user_id     | uuid         | FK → profiles(id)                      |
-| joined_at   | timestamptz  | DEFAULT now(), NOT NULL                |
-| is_admin    | boolean      | DEFAULT false                          |
-| typing      | boolean      | DEFAULT false                          |
 
 **Foreign Keys:**
 - chat_id → chats(id)
@@ -645,14 +643,6 @@ CREATE TABLE IF NOT EXISTS "public"."chat_messages" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| chat_id     | uuid         | FK → chats(id)                         |
-| user_id     | uuid         | FK → profiles(id)                      |
-| content     | text         |                                        |
-| media_url   | text         |                                        |
-| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
 
 **Foreign Keys:**
 - chat_id → chats(id)
@@ -673,13 +663,6 @@ CREATE TABLE IF NOT EXISTS "public"."chats" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| is_group    | boolean      | DEFAULT false, NOT NULL                |
-| name        | text         |                                        |
-| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
-| created_by  | uuid         |                                        |
 
 ---
 
@@ -695,12 +678,6 @@ CREATE TABLE IF NOT EXISTS "public"."comment_likes" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| comment_id  | uuid         | FK → comments(id)                      |
-| user_id     | uuid         | FK → profiles(id)                      |
-| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
 
 **Foreign Keys:**
 - comment_id → comments(id)
@@ -725,15 +702,6 @@ CREATE TABLE IF NOT EXISTS "public"."comments" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| post_id     | uuid         | FK → posts(id)                         |
-| user_id     | uuid         | FK → profiles(id)                      |
-| content     | text         | NOT NULL                               |
-| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
-| parent_id   | uuid         | FK → comments(id)                      |
-
 **Foreign Keys:**
 - post_id → posts(id)
 - user_id → profiles(id)
@@ -756,16 +724,6 @@ CREATE TABLE IF NOT EXISTS "public"."content_flags" (
     CONSTRAINT "only_one_content" CHECK ((("post_id" IS NOT NULL AND "comment_id" IS NULL) OR ("post_id" IS NULL AND "comment_id" IS NOT NULL)))
 );
 ```
-
-| Column             | Data Type    | Constraints/Description                |
-|--------------------|-------------|----------------------------------------|
-| id                 | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| flagged_by_user_id | uuid         | FK → profiles(id), NOT NULL            |
-| post_id            | uuid         | FK → posts(id)                         |
-| comment_id         | uuid         | FK → comments(id)                      |
-| reason             | text         |                                        |
-| created_at         | timestamptz  | DEFAULT now()                          |
-| status             | text         | DEFAULT 'pending'                      |
 
 **Foreign Keys:**
 - flagged_by_user_id → profiles(id)
@@ -794,18 +752,6 @@ CREATE TABLE IF NOT EXISTS "public"."filemodels" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| user_id     | uuid         | FK → profiles(id)                      |
-| file_url    | text         | NOT NULL                               |
-| file_name   | text         | NOT NULL                               |
-| file_type   | text         |                                        |
-| file_size   | integer      |                                        |
-| description | text         |                                        |
-| is_public   | boolean      | DEFAULT false, NOT NULL                |
-| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
-
 **Foreign Keys:**
 - user_id → profiles(id)
 
@@ -822,13 +768,6 @@ CREATE TABLE IF NOT EXISTS "public"."followers" (
     "created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 ```
-
-| Column        | Data Type    | Constraints/Description                |
-|---------------|-------------|----------------------------------------|
-| id            | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| follower_id   | uuid         | FK → profiles(id)                      |
-| following_id  | uuid         | FK → profiles(id)                      |
-| created_at    | timestamptz  | DEFAULT now(), NOT NULL                |
 
 **Foreign Keys:**
 - follower_id → profiles(id)
@@ -850,13 +789,6 @@ CREATE TABLE IF NOT EXISTS "public"."likes" (
     "created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 ```
-
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| user_id     | uuid         | FK → profiles(id)                      |
-| post_id     | uuid         | FK → posts(id)                         |
-| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
 
 **Foreign Keys:**
 - user_id → profiles(id)
@@ -881,14 +813,6 @@ CREATE TABLE IF NOT EXISTS "public"."notifications" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| user_id     | uuid         | FK → profiles(id)                      |
-| type        | text         | NOT NULL                               |
-| data        | jsonb        |                                        |
-| is_read     | boolean      | DEFAULT false, NOT NULL                |
-| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
 
 **Foreign Keys:**
 - user_id → profiles(id)
@@ -913,18 +837,6 @@ CREATE TABLE IF NOT EXISTS "public"."posts" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| user_id     | uuid         | FK → profiles(id)                      |
-| content     | text         | NOT NULL                               |
-| media_url   | text         |                                        |
-| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
-| updated_at  | timestamptz  | DEFAULT now(), NOT NULL                |
-| is_deleted  | boolean      | DEFAULT false, NOT NULL                |
-| file_url    | text         |                                        |
-| image_url   | text         |                                        |
-| flag_status | text         | DEFAULT 'normal'                       |
 
 **Foreign Keys:**
 - user_id → profiles(id)
@@ -953,22 +865,6 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, NOT NULL, FK → auth.users(id)      |
-| email       | text         | NOT NULL                               |
-| full_name   | text         |                                        |
-| avatar_url  | text         |                                        |
-| bio         | text         |                                        |
-| location    | text         |                                        |
-| website     | text         |                                        |
-| settings    | jsonb        |                                        |
-| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
-| updated_at  | timestamptz  | DEFAULT now(), NOT NULL                |
-| member_type | text         | DEFAULT 'student', CHECK (student,alumni) |
-| status      | text         | DEFAULT 'active'                       |
-| last_seen   | timestamptz  | DEFAULT now()                          |
-
 **Foreign Keys:**
 - id → auth.users(id)
 
@@ -994,16 +890,6 @@ CREATE TABLE IF NOT EXISTS "public"."question_notifications" (
 );
 ```
 
-| Column             | Data Type    | Constraints/Description                |
-|--------------------|-------------|----------------------------------------|
-| id                 | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| question_id        | uuid         | FK → questions(id)                     |
-| user_id            | uuid         | FK → auth.users(id)                    |
-| notification_type  | text         | CHECK (in 'answer','comment','vote','best_answer') |
-| message            | text         | NOT NULL                               |
-| is_read            | boolean      | DEFAULT false                          |
-| related_id         | uuid         |                                        |
-| created_at         | timestamptz  | DEFAULT now()                          |
 
 **Foreign Keys:**
 - question_id → questions(id)
@@ -1029,14 +915,6 @@ CREATE TABLE IF NOT EXISTS "public"."question_votes" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| question_id | uuid         | FK → questions(id)                     |
-| user_id     | uuid         | FK → auth.users(id)                    |
-| vote_value  | smallint     | CHECK (1 or -1)                        |
-| created_at  | timestamptz  | DEFAULT now()                          |
-| updated_at  | timestamptz  | DEFAULT now()                          |
 
 **Foreign Keys:**
 - question_id → questions(id)
@@ -1066,18 +944,6 @@ CREATE TABLE IF NOT EXISTS "public"."questions" (
 );
 ```
 
-| Column         | Data Type    | Constraints/Description                |
-|----------------|-------------|----------------------------------------|
-| id             | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| user_id        | uuid         | FK → profiles(id)                      |
-| title          | text         | NOT NULL                               |
-| body           | text         | NOT NULL                               |
-| category       | text         |                                        |
-| status         | text         | DEFAULT 'open', CHECK (open,closed,duplicate) |
-| best_answer_id | uuid         |                                        |
-| view_count     | integer      | DEFAULT 0                              |
-| created_at     | timestamptz  | DEFAULT now()                          |
-| updated_at     | timestamptz  | DEFAULT now()                          |
 
 **Foreign Keys:**
 - user_id → profiles(id)
@@ -1098,13 +964,6 @@ CREATE TABLE IF NOT EXISTS "public"."question_tags" (
     "created_at" timestamp with time zone DEFAULT now()
 );
 ```
-
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| question_id | uuid         | FK → questions(id)                     |
-| tag_name    | text         | NOT NULL                               |
-| created_at  | timestamptz  | DEFAULT now()                          |
 
 **Foreign Keys:**
 - question_id → questions(id)
@@ -1128,15 +987,6 @@ CREATE TABLE IF NOT EXISTS "public"."reputation_events" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | integer      | PK                                     |
-| user_id     | uuid         | FK → auth.users(id)                    |
-| type        | text         | NOT NULL                               |
-| value       | integer      | NOT NULL                               |
-| related_id  | integer      |                                        |
-| created_at  | timestamptz  | DEFAULT now()                          |
-
 **Foreign Keys:**
 - user_id → auth.users(id)
 
@@ -1153,11 +1003,6 @@ CREATE TABLE IF NOT EXISTS "public"."tags" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | integer      | PK                                     |
-| name        | text         | NOT NULL, UNIQUE                       |
-| created_at  | timestamptz  | DEFAULT now()                          |
 
 **Unique Constraints:**
 - name
@@ -1176,12 +1021,6 @@ CREATE TABLE IF NOT EXISTS "public"."user_roles" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
-| user_id     | uuid         | FK → auth.users(id), NOT NULL          |
-| role        | app_role     | DEFAULT 'user', NOT NULL               |
-| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
 
 **Foreign Keys:**
 - user_id → auth.users(id)
@@ -1207,14 +1046,6 @@ CREATE TABLE IF NOT EXISTS "public"."votes" (
 );
 ```
 
-| Column      | Data Type    | Constraints/Description                |
-|-------------|-------------|----------------------------------------|
-| id          | integer      | PK                                     |
-| user_id     | uuid         | FK → auth.users(id)                    |
-| target_id   | integer      | NOT NULL                               |
-| target_type | text         | CHECK ('question' or 'answer')         |
-| value       | smallint     | CHECK (1 or -1)                        |
-| created_at  | timestamptz  | DEFAULT now()                          |
 
 **Foreign Keys:**
 - user_id → auth.users(id)
