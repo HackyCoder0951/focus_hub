@@ -470,4 +470,68 @@ export function ThemeToggleButton() {
 
 ---
 
+## 9. UI/UX Enhancements
+
+**Role-based Sidebar Navigation (React)**
+```jsx
+import { useContext } from 'react';
+import { AuthContext } from '../contexts/AuthContext';
+
+export function Sidebar() {
+  const { user } = useContext(AuthContext);
+  return (
+    <nav>
+      <a href="/feed">Feed</a>
+      <a href="/resources">Resources</a>
+      {user?.role === 'admin' && <a href="/admin">Admin Dashboard</a>}
+    </nav>
+  );
+}
+```
+
+**Toast Notification Usage (React, with useToast hook)**
+```jsx
+import { useToast } from '../hooks/use-toast';
+
+export function SaveButton() {
+  const { showToast } = useToast();
+  return (
+    <button onClick={() => showToast('Saved successfully!')}>Save</button>
+  );
+}
+```
+
+**Filtering/Sorting UI (React)**
+```jsx
+import { useState } from 'react';
+
+export function FilterSortBar({ onFilter, onSort }) {
+  const [filter, setFilter] = useState('');
+  const [sort, setSort] = useState('date');
+  return (
+    <div>
+      <input value={filter} onChange={e => { setFilter(e.target.value); onFilter(e.target.value); }} placeholder="Filter..." />
+      <select value={sort} onChange={e => { setSort(e.target.value); onSort(e.target.value); }}>
+        <option value="date">Date</option>
+        <option value="popularity">Popularity</option>
+      </select>
+    </div>
+  );
+}
+```
+
+**Consistent Button (shadcn/ui or Tailwind)**
+```jsx
+// Using Tailwind CSS for a consistent button style
+export function PrimaryButton({ children, ...props }) {
+  return (
+    <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" {...props}>
+      {children}
+    </button>
+  );
+}
+```
+
+---
+
 *These snippets are representative and modular, showing how the main features of Focus Hub are implemented. For more details, refer to the respective module files in the codebase.* 
