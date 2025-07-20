@@ -933,54 +933,417 @@ CREATE OR REPLACE TRIGGER "realtime_vote_update_trigger" AFTER INSERT OR DELETE 
 
 ## 7. Functions (SQL)
 ```sql
--- All CREATE FUNCTION statements from focus_hub_new_schema.sql (with full bodies)
--- (Add all CREATE FUNCTION ... AS $$ ... $$; blocks here)
+CREATE OR REPLACE FUNCTION "public"."broadcast_comment_update"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    comment_data JSONB;
+BEGIN
+    -- Build comment data
+    comment_data := json_build_object(
+        'id', NEW.id,
+        'answer_id', NEW.answer_id,
+        'user_id', NEW.user_id,
+        'body', NEW.body,
+        'parent_comment_id', NEW.parent_comment_id,
+        'created_at', NEW.created_at,
+        'action', TG_OP
+    );
+    
+    -- Broadcast the comment update
+    PERFORM pg_notify(
+        'comment_update',
+        comment_data::text
+    );
+    
+    RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."broadcast_notification_update"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    notification_data JSONB;
+BEGIN
+    -- Build notification data
+    notification_data := json_build_object(
+        'id', NEW.id,
+        'user_id', NEW.user_id,
+        'notification_type', NEW.notification_type,
+        'message', NEW.message,
+        'is_read', NEW.is_read,
+        'related_id', NEW.related_id,
+        'created_at', NEW.created_at,
+        'action', TG_OP
+    );
+    
+    -- Broadcast the notification update
+    PERFORM pg_notify(
+        'notification_update',
+        notification_data::text
+    );
+    
+    RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."broadcast_vote_update"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    vote_count INTEGER;
+    vote_score INTEGER;
+    target_type TEXT;
+    target_id UUID;
+BEGIN
+    -- Determine if this is a question or answer vote
+    IF TG_TABLE_NAME = 'question_votes' THEN
+        target_type := 'question';
+        target_id := NEW.question_id;
+        
+        -- Calculate vote count and score for question
+        SELECT 
+            COUNT(*),
+            COALESCE(SUM(vote_value), 0)
+        INTO vote_count, vote_score
+        FROM question_votes 
+        WHERE question_id = NEW.question_id;
+        
+        -- Update question view_count (we'll use this for vote count)
+        UPDATE questions 
+        SET view_count = vote_count 
+        WHERE id = NEW.question_id;
+        
+    ELSIF TG_TABLE_NAME = 'answer_votes' THEN
+        target_type := 'answer';
+        target_id := NEW.answer_id;
+        
+        -- Calculate vote count and score for answer
+        SELECT 
+            COUNT(*),
+            COALESCE(SUM(vote_value), 0)
+        INTO vote_count, vote_score
+        FROM answer_votes 
+        WHERE answer_id = NEW.answer_id;
+    END IF;
+    
+    -- Broadcast the update via realtime
+    PERFORM pg_notify(
+        'vote_update',
+        json_build_object(
+            'target_type', target_type,
+            'target_id', target_id,
+            'vote_count', vote_count,
+            'vote_score', vote_score,
+            'user_id', NEW.user_id,
+            'vote_value', NEW.vote_value
+        )::text
+    );
+    
+    RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."create_realtime_notifications"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    -- Create notification for new answer
+    IF TG_OP = 'INSERT' AND TG_TABLE_NAME = 'answers' THEN
+        INSERT INTO question_notifications (
+            question_id, 
+            user_id, 
+            notification_type, 
+            message, 
+            related_id
+        )
+        SELECT 
+            NEW.question_id,
+            q.user_id,
+            'answer',
+            'Someone answered your question: ' || LEFT(q.title, 50) || '...',
+            NEW.id
+        FROM questions q
+        WHERE q.id = NEW.question_id AND q.user_id != NEW.user_id;
+    END IF;
+    
+    -- Create notification for new comment
+    IF TG_OP = 'INSERT' AND TG_TABLE_NAME = 'answer_comments' THEN
+        INSERT INTO answer_notifications (
+            answer_id,
+            user_id,
+            notification_type,
+            message,
+            related_id
+        )
+        SELECT 
+            NEW.answer_id,
+            a.user_id,
+            'comment',
+            'Someone commented on your answer',
+            NEW.id
+        FROM answers a
+        WHERE a.id = NEW.answer_id AND a.user_id != NEW.user_id;
+    END IF;
+    
+    -- Create notification for vote
+    IF TG_OP = 'INSERT' AND TG_TABLE_NAME = 'question_votes' THEN
+        INSERT INTO question_notifications (
+            question_id,
+            user_id,
+            notification_type,
+            message,
+            related_id
+        )
+        SELECT 
+            NEW.question_id,
+            q.user_id,
+            'vote',
+            CASE 
+                WHEN NEW.vote_value = 1 THEN 'Someone upvoted your question'
+                ELSE 'Someone downvoted your question'
+            END,
+            NEW.id
+        FROM questions q
+        WHERE q.id = NEW.question_id AND q.user_id != NEW.user_id;
+    END IF;
+    
+    IF TG_OP = 'INSERT' AND TG_TABLE_NAME = 'answer_votes' THEN
+        INSERT INTO answer_notifications (
+            answer_id,
+            user_id,
+            notification_type,
+            message,
+            related_id
+        )
+        SELECT 
+            NEW.answer_id,
+            a.user_id,
+            'vote',
+            CASE 
+                WHEN NEW.vote_value = 1 THEN 'Someone upvoted your answer'
+                ELSE 'Someone downvoted your answer'
+            END,
+            NEW.id
+        FROM answers a
+        WHERE a.id = NEW.answer_id AND a.user_id != NEW.user_id;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."get_unread_notification_count"("user_uuid" "uuid") RETURNS integer
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    total_count INTEGER;
+BEGIN
+    SELECT 
+        COALESCE(COUNT(*), 0) INTO total_count
+    FROM (
+        SELECT id FROM question_notifications 
+        WHERE user_id = user_uuid AND is_read = FALSE
+        UNION ALL
+        SELECT id FROM answer_notifications 
+        WHERE user_id = user_uuid AND is_read = FALSE
+    ) combined_notifications;
+    
+    RETURN total_count;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."get_vote_counts"("target_type" "text", "target_id" "uuid") RETURNS TABLE("vote_count" bigint, "vote_score" bigint)
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    IF target_type = 'question' THEN
+        RETURN QUERY
+        SELECT 
+            COUNT(*)::BIGINT as vote_count,
+            COALESCE(SUM(vote_value), 0)::BIGINT as vote_score
+        FROM question_votes 
+        WHERE question_id = target_id;
+    ELSIF target_type = 'answer' THEN
+        RETURN QUERY
+        SELECT 
+            COUNT(*)::BIGINT as vote_count,
+            COALESCE(SUM(vote_value), 0)::BIGINT as vote_score
+        FROM answer_votes 
+        WHERE answer_id = target_id;
+    END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."handle_file_deletion"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  -- Extract filename from file_url
+  DECLARE
+    file_path TEXT;
+  BEGIN
+    -- Extract the path from the file_url (remove domain and bucket prefix)
+    file_path := REPLACE(OLD.file_url, 'https://hfiltwodcwlqwxrwfjyp.supabase.co/storage/v1/object/public/uploads/', '');
+    
+    -- Delete from storage
+    DELETE FROM storage.objects 
+    WHERE bucket_id = 'uploads' 
+    AND name = file_path;
+    
+    RETURN OLD;
+  EXCEPTION
+    WHEN OTHERS THEN
+      -- Log error but don't fail the deletion
+      RAISE WARNING 'Failed to delete file from storage: %', SQLERRM;
+      RETURN OLD;
+  END;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."handle_file_update"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  -- If file_url changed, delete old file from storage
+  IF OLD.file_url != NEW.file_url THEN
+    DECLARE
+      old_file_path TEXT;
+    BEGIN
+      -- Extract the path from the old file_url
+      old_file_path := REPLACE(OLD.file_url, 'https://hfiltwodcwlqwxrwfjyp.supabase.co/storage/v1/object/public/uploads/', '');
+      
+      -- Delete old file from storage
+      DELETE FROM storage.objects 
+      WHERE bucket_id = 'uploads' 
+      AND name = old_file_path;
+    EXCEPTION
+      WHEN OTHERS THEN
+        -- Log error but don't fail the update
+        RAISE WARNING 'Failed to delete old file from storage: %', SQLERRM;
+    END;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  RAISE NOTICE 'member_type value: %', new.raw_user_meta_data ->> 'member_type';
+  INSERT INTO public.profiles (id, email, full_name, member_type, status)
+  VALUES (
+    new.id,
+    new.email,
+    new.raw_user_meta_data ->> 'full_name',
+    new.raw_user_meta_data ->> 'member_type',
+    'active'
+  );
+  INSERT INTO public.user_roles (user_id, role)
+  VALUES (new.id, 'user');
+  RETURN new;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "public"."app_role") RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id = _user_id
+      AND role = _role
+  )
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."leave_group"("p_chat_id" "uuid", "p_user_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+declare
+  admin_count integer;
+  member_count integer;
+  new_admin_id uuid;
+begin
+  -- Remove the user from chat_members
+  delete from chat_members where chat_id = p_chat_id and user_id = p_user_id;
+
+  -- Check if any admins remain
+  select count(*) into admin_count from chat_members where chat_id = p_chat_id and is_admin = true;
+
+  if admin_count = 0 then
+    -- Promote the earliest-joined member to admin, if any remain
+    select user_id into new_admin_id from chat_members where chat_id = p_chat_id order by joined_at asc limit 1;
+    if new_admin_id is not null then
+      update chat_members set is_admin = true where chat_id = p_chat_id and user_id = new_admin_id;
+    end if;
+  end if;
+
+  -- Check if any members remain
+  select count(*) into member_count from chat_members where chat_id = p_chat_id;
+  if member_count = 0 then
+    -- Delete all messages and the chat itself
+    delete from chat_messages where chat_id = p_chat_id;
+    delete from chats where id = p_chat_id;
+  end if;
+end;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."mark_notifications_as_read"("user_uuid" "uuid", "notification_ids" "uuid"[]) RETURNS integer
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    question_updated INTEGER;
+    answer_updated INTEGER;
+BEGIN
+    UPDATE question_notifications 
+    SET is_read = TRUE 
+    WHERE user_id = user_uuid AND id = ANY(notification_ids);
+    
+    GET DIAGNOSTICS question_updated = ROW_COUNT;
+    
+    UPDATE answer_notifications 
+    SET is_read = TRUE 
+    WHERE user_id = user_uuid AND id = ANY(notification_ids);
+    
+    GET DIAGNOSTICS answer_updated = ROW_COUNT;
+    
+    RETURN question_updated + answer_updated;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."update_updated_at_column"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
 ```
 
 ## 8. Views (SQL)
 ```sql
--- All CREATE VIEW statements from focus_hub_new_schema.sql
--- (Add all CREATE VIEW ... AS ...; blocks here)
+CREATE OR REPLACE VIEW "public"."question_stats" AS
+ SELECT "q"."id",
+    "q"."title",
+    "q"."view_count",
+    "count"(DISTINCT "a"."id") AS "answer_count",
+    "count"(DISTINCT "qv"."id") AS "vote_count",
+    ("sum"(
+        CASE
+            WHEN ("qv"."vote_value" = 1) THEN 1
+            ELSE 0
+        END) - "sum"(
+        CASE
+            WHEN ("qv"."vote_value" = '-1'::integer) THEN 1
+            ELSE 0
+        END)) AS "vote_score"
+   FROM (("public"."questions" "q"
+     LEFT JOIN "public"."answers" "a" ON (("q"."id" = "a"."question_id")))
+     LEFT JOIN "public"."question_votes" "qv" ON (("q"."id" = "qv"."question_id")))
+  GROUP BY "q"."id", "q"."title", "q"."view_count";
 ```
-
----
-
-*This database schema documentation provides comprehensive information about the Focus Hub platform's data structure, relationships, security policies, and optimization strategies.* 
-
-
-
-## 4. Indexes (SQL)
-
-
-## 5. Row Level Security (RLS) (SQL)
-```sql
-ALTER TABLE "public"."ai_answers" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."answer_comments" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."answer_notifications" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."answer_tags" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."answer_votes" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."answers" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."chat_members" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."chat_messages" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."chats" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."comment_likes" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."comments" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."content_flags" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."filemodels" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."followers" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."likes" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."notifications" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."posts" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."question_notifications" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."question_tags" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."question_votes" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."questions" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."user_roles" ENABLE ROW LEVEL SECURITY;
-
--- Policies (truncated for brevity, add all CREATE POLICY statements from the schema file)
--- Example:
-CREATE POLICY "AI can delete answer_tags" ON "public"."answer_tags" FOR DELETE USING (true);
-CREATE POLICY "AI can insert ai_answers" ON "public"."ai_answers" FOR INSERT WITH CHECK (true);
--- (Add all other CREATE POLICY statements from the schema file here)
-``` 
