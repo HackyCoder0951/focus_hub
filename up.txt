@@ -1,1 +1,91 @@
-https://www.mermaidchart.com/app/projects/ec033bba-5cd9-4134-8ba9-ee31c2fe0779/diagrams/bc88c1b1-8823-451c-ac63-d9f4036219f2/version/v0.1/edit
+CHAPTER 6
+    5. IMPLEMENTATION
+Academic institutions are becoming more aware of the influence alumni have on students' achievement. Current students can greatly benefit from the real-world experience, professional insights, and industry exposure that alumni bring. The majority of institutions, however, do not have a formal framework in place to support these kinds of interactions. The development of intelligent systems that can comprehend, produce, and communicate natural language has also been made possible by advances in generative artificial intelligence (AI). This has made it feasible to create intelligent, automated assistance systems for career counselling and mentoring.
+
+This project creates an intelligent platform that helps students with career planning, placement preparation, and mentoring by fusing the automation capabilities of generative AI with the human expertise of alumni.
+
+Available Features
+1. Authentication System
+    • User Registration: Email/password signup with email verification
+    • User Login: Secure email/password authentication
+    • Password Recovery: Forgot password functionality with email reset
+    • Session Management: Automatic session handling and persistence
+    • Role-based Access: Admin and user role management
+    • Protected Routes: Automatic redirects for unauthenticated users
+
+2. Social Feed
+    • Post Creation: Rich text posts with media support
+    • Social Interactions: Like, comment, and share functionality
+    • Real-time Updates: Live feed updates using Supabase subscriptions
+    • Infinite Scroll: Efficient pagination for large feeds
+    • Post Categories: Organized content by topics and interests
+    • User Mentions: Tag other users in posts and comments
+    • Content Flagging: Users can flag posts for review; admins are notified and can review, resolve, dismiss, or delete flagged content
+
+
+3. Real-time Chat System
+    • Instant Messaging: Real-time message delivery
+    • Online Indicators: User presence and status display
+    • Message History: Persistent chat history and search
+    • File Sharing: Media and document sharing in chats, with file-type icons and download links
+    • Group Chats: Multi-user conversation support
+    • Message Reactions: Emoji reactions to messages
+    • Typing Indicators: Real-time typing status
+
+4. Q&A Community
+    • Question Posting: Structured question format with categories (UI-based, not DB-enforced)
+    • Answer System: Community-driven answers with voting
+    • Voting System: Upvote/downvote for both questions and answers, with per-user vote tracking
+    • Answer Comments: Threaded comments on answers
+    • Search & Filter: Advanced search and filtering capabilities, including trending and unanswered tabs
+    • Best Answer Selection: Mark best answers for questions
+    • Question Tags: Categorize questions with tags
+    • Reputation System: User reputation based on contributions
+    • Editing/Deleting: Users can edit or delete their own questions/answers
+
+5. Resource Sharing
+    • File Upload: Drag-and-drop file uploads with progress
+    • Document Management: Organize and categorize resources
+    • Access Control: Public and private resource sharing
+
+    • Preview System: File previews for images, videos, PDFs, and text files
+    • Version Control: Track file versions and updates
+    • Download Tracking: Monitor resource usage and popularity
+    • File Categories: Organize resources by type and topic
+    • File Metadata: Add/edit descriptions and visibility for files
+    • Filtering & Sorting: Search, filter by type/visibility, and sort files
+    • Grid/List Views: Toggle between grid and list views for resources
+    • Edit & Delete: Users can edit metadata or delete their own files
+
+6. User Profiles
+    • Profile Management: Edit personal information and bio
+    • Avatar Upload: Profile picture management with cropping
+    • Activity History: User activity and contributions timeline
+    • Privacy Settings: Control profile visibility and data sharing
+    • Social Connections: Follow other users and build networks
+    • Achievement System: Badges and milestones for engagement
+    • Profile Customization: Custom themes and layouts
+
+7. Admin Dashboard
+    • User Management: View and manage all user accounts
+    • Role Management: Assign and modify user roles and permissions
+    • System Statistics: Platform usage analytics and metrics
+    • Content Moderation: Moderate posts, comments, and resources; review flagged content with action options
+    • System Health: Monitor platform performance and errors
+    • Bulk Operations: Manage multiple users and content items
+    • Audit Logs: Track administrative actions and changes.
+
+8. Settings & Preferences
+    • Account Settings: Manage email, password, and account details
+    • Notification Preferences: Customize notification settings
+    • Privacy Controls: Manage data sharing and visibility
+    • Theme Customization: Choose between light and dark themes
+    • Language Settings: Multi-language support
+    • Security Settings: Two-factor authentication and security options
+    • Data Export: Export user data and activity history
+
+9. UI/UX Enhancements (New)
+    • Role-based Navigation: Sidebar and navigation adapt to user/admin roles
+    • Toast Notifications: Consistent feedback for all user actions
+    • Modern UI: Consistent use of shadcn/ui, Radix, and Tailwind for accessible, responsive design
+    • Advanced Filtering/Sorting: Robust filtering and sorting in resources and Q&A
