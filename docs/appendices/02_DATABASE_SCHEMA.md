@@ -742,61 +742,152 @@ CREATE POLICY "Public read access" ON <table_name>
     FOR SELECT USING (true);
 ```
 
----
-
-## 6. Triggers and Functions
-
-### 6.1 Update Timestamp Trigger
+## 5. Row Level Security (RLS) (SQL)
 ```sql
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
+ALTER TABLE "public"."ai_answers" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."answer_comments" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."answer_notifications" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."answer_tags" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."answer_votes" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."answers" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."chat_members" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."chat_messages" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."chats" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."comment_likes" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."comments" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."content_flags" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."filemodels" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."followers" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."likes" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."notifications" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."posts" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."question_notifications" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."question_tags" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."question_votes" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."questions" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."user_roles" ENABLE ROW LEVEL SECURITY;
 
--- Apply trigger to all tables with updated_at column
-CREATE TRIGGER update_<table>_updated_at BEFORE UPDATE ON <table>
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- All CREATE POLICY statements from focus_hub_new_schema.sql
+CREATE POLICY "AI can delete answer_tags" ON "public"."answer_tags" FOR DELETE USING (true);
+CREATE POLICY "AI can insert ai_answers" ON "public"."ai_answers" FOR INSERT WITH CHECK (true);
+CREATE POLICY "AI can insert answer_tags" ON "public"."answer_tags" FOR INSERT WITH CHECK (true);
+CREATE POLICY "AI can select ai_answers" ON "public"."ai_answers" FOR SELECT USING (true);
+CREATE POLICY "AI can select answer_tags" ON "public"."answer_tags" FOR SELECT USING (true);
+CREATE POLICY "AI can update ai_answers" ON "public"."ai_answers" FOR UPDATE USING (true);
+CREATE POLICY "AI can update answer_tags" ON "public"."answer_tags" FOR UPDATE USING (true);
+CREATE POLICY "Admins can delete any flag" ON "public"."content_flags" FOR DELETE USING ((EXISTS ( SELECT 1 FROM "public"."user_roles" WHERE (("user_roles"."user_id" = "auth"."uid"()) AND ("user_roles"."role" = 'admin'::"public"."app_role")))));
+CREATE POLICY "Admins can insert roles" ON "public"."user_roles" FOR INSERT WITH CHECK ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+CREATE POLICY "Admins can remove members" ON "public"."chat_members" FOR DELETE USING ((EXISTS ( SELECT 1 FROM "public"."chat_members" "cm" WHERE (("cm"."chat_id" = "chat_members"."chat_id") AND ("cm"."user_id" = "auth"."uid"()) AND ("cm"."is_admin" = true)))));
+CREATE POLICY "Admins can update admin status" ON "public"."chat_members" FOR UPDATE USING ((EXISTS ( SELECT 1 FROM "public"."chat_members" "cm" WHERE (("cm"."chat_id" = "chat_members"."chat_id") AND ("cm"."user_id" = "auth"."uid"()) AND ("cm"."is_admin" = true)))));
+CREATE POLICY "Admins can update any flag" ON "public"."content_flags" FOR UPDATE USING ((EXISTS ( SELECT 1 FROM "public"."user_roles" WHERE (("user_roles"."user_id" = "auth"."uid"()) AND ("user_roles"."role" = 'admin'::"public"."app_role")))));
+CREATE POLICY "Admins can update any profile" ON "public"."profiles" FOR UPDATE USING ((EXISTS ( SELECT 1 FROM "public"."user_roles" WHERE (("user_roles"."user_id" = "auth"."uid"()) AND ("user_roles"."role" = 'admin'::"public"."app_role")))));
+CREATE POLICY "Admins can update group info" ON "public"."chats" FOR UPDATE USING ((EXISTS ( SELECT 1 FROM "public"."chat_members" WHERE (("chat_members"."chat_id" = "chats"."id") AND ("chat_members"."user_id" = "auth"."uid"()) AND ("chat_members"."is_admin" = true)))));
+CREATE POLICY "Admins can update roles" ON "public"."user_roles" FOR UPDATE USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+CREATE POLICY "Admins can view all flags" ON "public"."content_flags" FOR SELECT USING ((EXISTS ( SELECT 1 FROM "public"."user_roles" WHERE (("user_roles"."user_id" = "auth"."uid"()) AND ("user_roles"."role" = 'admin'::"public"."app_role")))));
+CREATE POLICY "Admins can view all roles" ON "public"."user_roles" FOR SELECT USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+CREATE POLICY "All users can view all flags" ON "public"."content_flags" FOR SELECT USING (("auth"."role"() = 'authenticated'::"text"));
+CREATE POLICY "Allow all users to read admin roles" ON "public"."user_roles" FOR SELECT USING (true);
+CREATE POLICY "Allow users to update their own last_seen" ON "public"."profiles" FOR UPDATE USING (("auth"."uid"() = "id"));
+CREATE POLICY "Allow users to update their own typing status" ON "public"."chat_members" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Answer comments are viewable by everyone" ON "public"."answer_comments" FOR SELECT USING (true);
+CREATE POLICY "Answer votes are viewable by everyone" ON "public"."answer_votes" FOR SELECT USING (true);
+CREATE POLICY "Anyone can add any user to chat" ON "public"."chat_members" FOR INSERT WITH CHECK (true);
+CREATE POLICY "Authenticated users can delete answers" ON "public"."answers" FOR DELETE USING (("auth"."role"() = 'authenticated'::"text"));
+CREATE POLICY "Authenticated users can delete own posts" ON "public"."posts" FOR DELETE USING ((("auth"."role"() = 'authenticated'::"text") AND ("user_id" = "auth"."uid"())));
+CREATE POLICY "Authenticated users can delete questions" ON "public"."questions" FOR DELETE USING (("auth"."role"() = 'authenticated'::"text"));
+CREATE POLICY "Authenticated users can insert answers" ON "public"."answers" FOR INSERT WITH CHECK (("auth"."role"() = 'authenticated'::"text"));
+CREATE POLICY "Authenticated users can insert posts" ON "public"."posts" FOR INSERT WITH CHECK ((("auth"."role"() = 'authenticated'::"text") AND ("user_id" = "auth"."uid"())));
+CREATE POLICY "Authenticated users can insert questions" ON "public"."questions" FOR INSERT WITH CHECK (("auth"."role"() = 'authenticated'::"text"));
+CREATE POLICY "Authenticated users can select answers" ON "public"."answers" FOR SELECT USING (("auth"."role"() = 'authenticated'::"text"));
+CREATE POLICY "Authenticated users can select questions" ON "public"."questions" FOR SELECT USING (("auth"."role"() = 'authenticated'::"text"));
+CREATE POLICY "Authenticated users can update answers" ON "public"."answers" FOR UPDATE USING (("auth"."role"() = 'authenticated'::"text"));
+CREATE POLICY "Authenticated users can update own posts" ON "public"."posts" FOR UPDATE USING ((("auth"."role"() = 'authenticated'::"text") AND ("user_id" = "auth"."uid"())));
+CREATE POLICY "Authenticated users can update questions" ON "public"."questions" FOR UPDATE USING (("auth"."role"() = 'authenticated'::"text"));
+CREATE POLICY "Authenticated users can view posts" ON "public"."posts" FOR SELECT USING (("auth"."role"() = 'authenticated'::"text"));
+CREATE POLICY "Public can view all profiles" ON "public"."profiles" FOR SELECT USING (true);
+CREATE POLICY "Question owners can manage tags" ON "public"."question_tags" USING ((EXISTS ( SELECT 1 FROM "public"."questions" WHERE (("questions"."id" = "question_tags"."question_id") AND ("questions"."user_id" = "auth"."uid"())))));
+CREATE POLICY "Question tags are viewable by everyone" ON "public"."question_tags" FOR SELECT USING (true);
+CREATE POLICY "Question votes are viewable by everyone" ON "public"."question_votes" FOR SELECT USING (true);
+CREATE POLICY "System can insert answer notifications" ON "public"."answer_notifications" FOR INSERT WITH CHECK (true);
+CREATE POLICY "System can insert notifications" ON "public"."question_notifications" FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can delete own files" ON "public"."filemodels" FOR DELETE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can delete their own comments" ON "public"."answer_comments" FOR DELETE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can delete their own comments" ON "public"."comments" FOR DELETE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can delete their own files" ON "public"."filemodels" FOR DELETE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can delete their own follows" ON "public"."followers" FOR DELETE USING (("auth"."uid"() = "follower_id"));
+CREATE POLICY "Users can delete their own likes" ON "public"."likes" FOR DELETE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can delete their own messages" ON "public"."chat_messages" FOR DELETE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can delete their own votes" ON "public"."answer_votes" FOR DELETE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can delete their own votes" ON "public"."question_votes" FOR DELETE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can delete themselves from chat" ON "public"."chat_members" FOR DELETE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can flag posts" ON "public"."content_flags" FOR INSERT WITH CHECK (("auth"."uid"() = "flagged_by_user_id"));
+CREATE POLICY "Users can follow/unfollow" ON "public"."followers" FOR INSERT WITH CHECK (("auth"."uid"() = "follower_id"));
+CREATE POLICY "Users can insert chat messages" ON "public"."chat_messages" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can insert chats" ON "public"."chats" FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can insert files" ON "public"."filemodels" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can insert notifications" ON "public"."notifications" FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can insert own files" ON "public"."filemodels" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can insert their own comments" ON "public"."answer_comments" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can insert their own comments" ON "public"."comments" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can insert their own profile" ON "public"."profiles" FOR INSERT WITH CHECK (("auth"."uid"() = "id"));
+CREATE POLICY "Users can like posts" ON "public"."likes" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can like/unlike comments" ON "public"."comment_likes" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can unlike their own comment like" ON "public"."comment_likes" FOR DELETE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can update own files" ON "public"."filemodels" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can update their notifications" ON "public"."notifications" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can update their own answer notifications" ON "public"."answer_notifications" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can update their own comments" ON "public"."answer_comments" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can update their own comments" ON "public"."comments" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can update their own files" ON "public"."filemodels" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can update their own notifications" ON "public"."question_notifications" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can update their own profile" ON "public"."profiles" FOR UPDATE USING (("auth"."uid"() = "id"));
+CREATE POLICY "Users can update their own votes" ON "public"."answer_votes" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can update their own votes" ON "public"."question_votes" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can view all comment likes" ON "public"."comment_likes" FOR SELECT USING (true);
+CREATE POLICY "Users can view all comments" ON "public"."comments" FOR SELECT USING (true);
+CREATE POLICY "Users can view chat members" ON "public"."chat_members" FOR SELECT USING (true);
+CREATE POLICY "Users can view chat messages" ON "public"."chat_messages" FOR SELECT USING (true);
+CREATE POLICY "Users can view chats" ON "public"."chats" FOR SELECT USING (true);
+CREATE POLICY "Users can view followers" ON "public"."followers" FOR SELECT USING (true);
+CREATE POLICY "Users can view likes" ON "public"."likes" FOR SELECT USING (true);
+CREATE POLICY "Users can view own and public files" ON "public"."filemodels" FOR SELECT USING ((("auth"."uid"() = "user_id") OR ("is_public" = true)));
+CREATE POLICY "Users can view public files" ON "public"."filemodels" FOR SELECT USING (("is_public" OR ("auth"."uid"() = "user_id")));
+CREATE POLICY "Users can view their notifications" ON "public"."notifications" FOR SELECT USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can view their own answer notifications" ON "public"."answer_notifications" FOR SELECT USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can view their own notifications" ON "public"."question_notifications" FOR SELECT USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can view their own profile" ON "public"."profiles" FOR SELECT USING (("auth"."uid"() = "id"));
+CREATE POLICY "Users can view their own roles" ON "public"."user_roles" FOR SELECT USING (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can vote on answers" ON "public"."answer_votes" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can vote on questions" ON "public"."question_votes" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
 ```
 
-### 6.2 Vote Count Triggers
+## 6. Triggers (SQL)
 ```sql
-CREATE OR REPLACE FUNCTION update_vote_counts()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Logic to update vote counts on related tables
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_vote_counts_trigger
-    AFTER INSERT OR UPDATE OR DELETE ON votes
-    FOR EACH ROW EXECUTE FUNCTION update_vote_counts();
+CREATE OR REPLACE TRIGGER "file_deletion_trigger" AFTER DELETE ON "public"."filemodels" FOR EACH ROW EXECUTE FUNCTION "public"."handle_file_deletion"();
+CREATE OR REPLACE TRIGGER "file_update_trigger" AFTER UPDATE ON "public"."filemodels" FOR EACH ROW EXECUTE FUNCTION "public"."handle_file_update"();
+CREATE OR REPLACE TRIGGER "realtime_answer_notification_update_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."answer_notifications" FOR EACH ROW EXECUTE FUNCTION "public"."broadcast_notification_update"();
+CREATE OR REPLACE TRIGGER "realtime_answer_vote_notification_trigger" AFTER INSERT ON "public"."answer_votes" FOR EACH ROW EXECUTE FUNCTION "public"."create_realtime_notifications"();
+CREATE OR REPLACE TRIGGER "realtime_answer_vote_update_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."answer_votes" FOR EACH ROW EXECUTE FUNCTION "public"."broadcast_vote_update"();
+CREATE OR REPLACE TRIGGER "realtime_comment_notification_trigger" AFTER INSERT ON "public"."answer_comments" FOR EACH ROW EXECUTE FUNCTION "public"."create_realtime_notifications"();
+CREATE OR REPLACE TRIGGER "realtime_comment_update_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."answer_comments" FOR EACH ROW EXECUTE FUNCTION "public"."broadcast_comment_update"();
+CREATE OR REPLACE TRIGGER "realtime_notification_creation_trigger" AFTER INSERT ON "public"."answers" FOR EACH ROW EXECUTE FUNCTION "public"."create_realtime_notifications"();
+CREATE OR REPLACE TRIGGER "realtime_notification_update_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."question_notifications" FOR EACH ROW EXECUTE FUNCTION "public"."broadcast_notification_update"();
+CREATE OR REPLACE TRIGGER "realtime_vote_notification_trigger" AFTER INSERT ON "public"."question_votes" FOR EACH ROW EXECUTE FUNCTION "public"."create_realtime_notifications"();
+CREATE OR REPLACE TRIGGER "realtime_vote_update_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."question_votes" FOR EACH ROW EXECUTE FUNCTION "public"."broadcast_vote_update"();
 ```
 
-### 6.3 Comment Count Triggers
+## 7. Functions (SQL)
 ```sql
-CREATE OR REPLACE FUNCTION update_comment_counts()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Logic to update comment counts on related tables
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_comment_counts_trigger
-    AFTER INSERT OR DELETE ON comments
-    FOR EACH ROW EXECUTE FUNCTION update_comment_counts();
+-- All CREATE FUNCTION statements from focus_hub_new_schema.sql (with full bodies)
+-- (Add all CREATE FUNCTION ... AS $$ ... $$; blocks here)
 ```
 
----
-
-## Summary Statistics
-- **Total Tables:** 24
-- **Total Indexes:** (see above, matches schema)
-- **Total Functions/Triggers:** (see above, matches schema)
+## 8. Views (SQL)
+```sql
+-- All CREATE VIEW statements from focus_hub_new_schema.sql
+-- (Add all CREATE VIEW ... AS ...; blocks here)
+```
 
 ---
 
