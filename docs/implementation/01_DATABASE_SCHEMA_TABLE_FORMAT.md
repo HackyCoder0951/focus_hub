@@ -20,7 +20,7 @@
 | status       | text        | DEFAULT 'active'                                       |
 | last_seen    | timestamptz | DEFAULT now()                                          |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -33,7 +33,7 @@ _See Indexes section below for index details._
 | role        | app_role    | DEFAULT 'user'                                 |
 | created_at  | timestamptz | DEFAULT now()                                  |
 
-_See Indexes section below for index details._
+
 
 ## Social Feed Tables
 
@@ -52,7 +52,7 @@ _See Indexes section below for index details._
 | created_at  | timestamptz | DEFAULT now()                                  |
 | updated_at  | timestamptz | DEFAULT now()                                  |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -67,7 +67,7 @@ _See Indexes section below for index details._
 | parent_id   | uuid        | FK → comments(id)                              |
 | created_at  | timestamptz | DEFAULT now()                                  |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -80,7 +80,7 @@ _See Indexes section below for index details._
 | user_id     | uuid        | FK → profiles(id)                              |
 | created_at  | timestamptz | DEFAULT now()                                  |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -93,7 +93,7 @@ _See Indexes section below for index details._
 | user_id     | uuid        | FK → profiles(id)                              |
 | created_at  | timestamptz | DEFAULT now()                                  |
 
-_See Indexes section below for index details._
+
 
 ## Q&A Module Tables
 
@@ -111,7 +111,7 @@ _See Indexes section below for index details._
 | status       | text        | DEFAULT 'active'                                        |
 | view_count   | bigint      | DEFAULT 0, NOT NULL                                     |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -127,7 +127,7 @@ _See Indexes section below for index details._
 | updated_at   | timestamptz | DEFAULT now(), NOT NULL                                 |
 | is_accepted  | boolean     | DEFAULT false, NOT NULL                                 |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -140,7 +140,7 @@ _See Indexes section below for index details._
 | user_id      | uuid        | FK → profiles(id), NOT NULL                             |
 | vote_value   | integer     | NOT NULL                                                |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -153,7 +153,7 @@ _See Indexes section below for index details._
 | user_id      | uuid        | FK → profiles(id), NOT NULL                             |
 | vote_value   | integer     | NOT NULL                                                |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -165,7 +165,7 @@ _See Indexes section below for index details._
 | question_id  | uuid        | FK → questions(id), NOT NULL                            |
 | tag_name     | text        | NOT NULL                                                |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -180,7 +180,7 @@ _See Indexes section below for index details._
 | created_at   | timestamptz | DEFAULT now(), NOT NULL                                 |
 | updated_at   | timestamptz | DEFAULT now(), NOT NULL                                 |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -195,7 +195,7 @@ _See Indexes section below for index details._
 | created_at        | timestamptz | DEFAULT now(), NOT NULL                                 |
 | parent_comment_id | uuid        | FK → answer_comments(id)                                |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -207,7 +207,7 @@ _See Indexes section below for index details._
 | answer_id    | uuid        | FK → answers(id), NOT NULL                              |
 | tag_name     | text        | NOT NULL                                                |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -219,7 +219,7 @@ _See Indexes section below for index details._
 | user_id      | uuid        | FK → profiles(id), NOT NULL                             |
 | vote_value   | integer     | NOT NULL                                                |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -232,7 +232,7 @@ _See Indexes section below for index details._
 | event_type   | text        | NOT NULL                                                |
 | created_at   | timestamptz | DEFAULT now(), NOT NULL                                 |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -243,7 +243,7 @@ _See Indexes section below for index details._
 | id           | uuid        | PK, DEFAULT gen_random_uuid(), NOT NULL                 |
 | tag_name     | text        | NOT NULL                                                |
 
-_See Indexes section below for index details._
+
 
 ## Chat System Tables
 
@@ -255,7 +255,7 @@ _See Indexes section below for index details._
 | created_at   | timestamptz | DEFAULT now(), NOT NULL                                 |
 | updated_at   | timestamptz | DEFAULT now(), NOT NULL                                 |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -269,7 +269,7 @@ _See Indexes section below for index details._
 | is_admin     | boolean     | DEFAULT false, NOT NULL                                 |
 | joined_at    | timestamptz | DEFAULT now(), NOT NULL                                 |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -283,7 +283,7 @@ _See Indexes section below for index details._
 | content      | text        | NOT NULL                                                |
 | created_at   | timestamptz | DEFAULT now(), NOT NULL                                 |
 
-_See Indexes section below for index details._
+
 
 ## Resource Sharing Tables
 
@@ -301,7 +301,7 @@ _See Indexes section below for index details._
 | created_at   | timestamptz | DEFAULT now(), NOT NULL                                 |
 | updated_at   | timestamptz | DEFAULT now(), NOT NULL                                 |
 
-_See Indexes section below for index details._
+
 
 ## Social Features Tables
 
@@ -313,7 +313,7 @@ _See Indexes section below for index details._
 | follower_id  | uuid        | FK → profiles(id), NOT NULL                             |
 | following_id | uuid        | FK → profiles(id), NOT NULL                             |
 
-_See Indexes section below for index details._
+
 
 ## Notification Tables
 
@@ -328,7 +328,7 @@ _See Indexes section below for index details._
 | is_read      | boolean     | DEFAULT false, NOT NULL                                 |
 | created_at   | timestamptz | DEFAULT now(), NOT NULL                                 |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -344,7 +344,7 @@ _See Indexes section below for index details._
 | is_read      | boolean     | DEFAULT false, NOT NULL                                 |
 | created_at   | timestamptz | DEFAULT now(), NOT NULL                                 |
 
-_See Indexes section below for index details._
+
 
 ---
 
@@ -360,7 +360,7 @@ _See Indexes section below for index details._
 | is_read      | boolean     | DEFAULT false, NOT NULL                                 |
 | created_at   | timestamptz | DEFAULT now(), NOT NULL                                 |
 
-_See Indexes section below for index details._
+
 
 ## Moderation Tables
 
@@ -373,7 +373,7 @@ _See Indexes section below for index details._
 | flagged_by_user_id | uuid  | FK → profiles(id)                                       |
 | post_id      | uuid        | FK → posts(id)                                          |
 
-_See Indexes section below for index details._
+
 
 ## Indexes
 
