@@ -801,3 +801,172 @@ CREATE TRIGGER update_comment_counts_trigger
 ---
 
 *This database schema documentation provides comprehensive information about the Focus Hub platform's data structure, relationships, security policies, and optimization strategies.* 
+
+## 3. Relationships (SQL)
+```sql
+ALTER TABLE ONLY "public"."ai_answers"
+    ADD CONSTRAINT "ai_answers_question_id_fkey" FOREIGN KEY ("question_id") REFERENCES "public"."questions"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."answer_comments"
+    ADD CONSTRAINT "answer_comments_answer_id_fkey" FOREIGN KEY ("answer_id") REFERENCES "public"."answers"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."answer_comments"
+    ADD CONSTRAINT "answer_comments_parent_comment_id_fkey" FOREIGN KEY ("parent_comment_id") REFERENCES "public"."answer_comments"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."answer_comments"
+    ADD CONSTRAINT "answer_comments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."answer_notifications"
+    ADD CONSTRAINT "answer_notifications_answer_id_fkey" FOREIGN KEY ("answer_id") REFERENCES "public"."answers"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."answer_notifications"
+    ADD CONSTRAINT "answer_notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."answer_tags"
+    ADD CONSTRAINT "answer_tags_answer_id_fkey" FOREIGN KEY ("answer_id") REFERENCES "public"."answers"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."answer_votes"
+    ADD CONSTRAINT "answer_votes_answer_id_fkey" FOREIGN KEY ("answer_id") REFERENCES "public"."answers"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."answer_votes"
+    ADD CONSTRAINT "answer_votes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."answers"
+    ADD CONSTRAINT "answers_question_id_fkey" FOREIGN KEY ("question_id") REFERENCES "public"."questions"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."answers"
+    ADD CONSTRAINT "answers_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."chat_members"
+    ADD CONSTRAINT "chat_members_chat_id_fkey" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."chat_members"
+    ADD CONSTRAINT "chat_members_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."chat_messages"
+    ADD CONSTRAINT "chat_messages_chat_id_fkey" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."chat_messages"
+    ADD CONSTRAINT "chat_messages_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."comment_likes"
+    ADD CONSTRAINT "comment_likes_comment_id_fkey" FOREIGN KEY ("comment_id") REFERENCES "public"."comments"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."comment_likes"
+    ADD CONSTRAINT "comment_likes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."comments"
+    ADD CONSTRAINT "comments_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "public"."comments"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."comments"
+    ADD CONSTRAINT "comments_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."comments"
+    ADD CONSTRAINT "comments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."content_flags"
+    ADD CONSTRAINT "content_flags_comment_id_fkey" FOREIGN KEY ("comment_id") REFERENCES "public"."comments"("id");
+ALTER TABLE ONLY "public"."content_flags"
+    ADD CONSTRAINT "content_flags_flagged_by_user_id_fkey" FOREIGN KEY ("flagged_by_user_id") REFERENCES "public"."profiles"("id");
+ALTER TABLE ONLY "public"."content_flags"
+    ADD CONSTRAINT "content_flags_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."filemodels"
+    ADD CONSTRAINT "filemodels_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."ai_answers"
+    ADD CONSTRAINT "fk_aianswers_user" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON UPDATE CASCADE ON DELETE SET NULL;
+ALTER TABLE ONLY "public"."answers"
+    ADD CONSTRAINT "fk_answers_user" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."questions"
+    ADD CONSTRAINT "fk_questions_user" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."followers"
+    ADD CONSTRAINT "followers_follower_id_fkey" FOREIGN KEY ("follower_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."followers"
+    ADD CONSTRAINT "followers_following_id_fkey" FOREIGN KEY ("following_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."likes"
+    ADD CONSTRAINT "likes_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."likes"
+    ADD CONSTRAINT "likes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."notifications"
+    ADD CONSTRAINT "notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."posts"
+    ADD CONSTRAINT "posts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."question_notifications"
+    ADD CONSTRAINT "question_notifications_question_id_fkey" FOREIGN KEY ("question_id") REFERENCES "public"."questions"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."question_notifications"
+    ADD CONSTRAINT "question_notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."question_tags"
+    ADD CONSTRAINT "question_tags_question_id_fkey" FOREIGN KEY ("question_id") REFERENCES "public"."questions"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."question_votes"
+    ADD CONSTRAINT "question_votes_question_id_fkey" FOREIGN KEY ("question_id") REFERENCES "public"."questions"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."question_votes"
+    ADD CONSTRAINT "question_votes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."questions"
+    ADD CONSTRAINT "questions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."reputation_events"
+    ADD CONSTRAINT "reputation_events_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."user_roles"
+    ADD CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."votes"
+    ADD CONSTRAINT "votes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+```
+
+## 4. Indexes (SQL)
+```sql
+CREATE INDEX "idx_ai_answers_question_id" ON "public"."ai_answers" USING "btree" ("question_id");
+CREATE INDEX "idx_answer_comments_answer_id" ON "public"."answer_comments" USING "btree" ("answer_id");
+CREATE INDEX "idx_answer_comments_parent_comment_id" ON "public"."answer_comments" USING "btree" ("parent_comment_id");
+CREATE INDEX "idx_answer_comments_user_id" ON "public"."answer_comments" USING "btree" ("user_id");
+CREATE INDEX "idx_answer_notifications_answer_id" ON "public"."answer_notifications" USING "btree" ("answer_id");
+CREATE INDEX "idx_answer_notifications_created_at" ON "public"."answer_notifications" USING "btree" ("created_at" DESC);
+CREATE INDEX "idx_answer_notifications_is_read" ON "public"."answer_notifications" USING "btree" ("is_read");
+CREATE INDEX "idx_answer_notifications_user_id" ON "public"."answer_notifications" USING "btree" ("user_id");
+CREATE INDEX "idx_answer_tags_answer_id" ON "public"."answer_tags" USING "btree" ("answer_id");
+CREATE INDEX "idx_answer_tags_tag_name" ON "public"."answer_tags" USING "btree" ("tag_name");
+CREATE INDEX "idx_answer_votes_answer_id" ON "public"."answer_votes" USING "btree" ("answer_id");
+CREATE INDEX "idx_answer_votes_user_id" ON "public"."answer_votes" USING "btree" ("user_id");
+CREATE INDEX "idx_answers_created_at" ON "public"."answers" USING "btree" ("created_at" DESC);
+CREATE INDEX "idx_answers_is_accepted" ON "public"."answers" USING "btree" ("is_accepted");
+CREATE INDEX "idx_answers_question_id" ON "public"."answers" USING "btree" ("question_id");
+CREATE INDEX "idx_answers_user_id" ON "public"."answers" USING "btree" ("user_id");
+CREATE INDEX "idx_chat_members_chat_id" ON "public"."chat_members" USING "btree" ("chat_id");
+CREATE INDEX "idx_chat_members_user_id" ON "public"."chat_members" USING "btree" ("user_id");
+CREATE INDEX "idx_chat_messages_chat_id" ON "public"."chat_messages" USING "btree" ("chat_id");
+CREATE INDEX "idx_filemodels_public" ON "public"."filemodels" USING "btree" ("is_public") WHERE ("is_public" = true);
+CREATE INDEX "idx_filemodels_search" ON "public"."filemodels" USING "gin" ("to_tsvector"('english', (("file_name" || ' ') || COALESCE("description", ''))));
+CREATE INDEX "idx_filemodels_user_created" ON "public"."filemodels" USING "btree" ("user_id", "created_at" DESC);
+CREATE INDEX "idx_filemodels_user_id" ON "public"."filemodels" USING "btree" ("user_id");
+CREATE INDEX "idx_followers_follower_id" ON "public"."followers" USING "btree" ("follower_id");
+CREATE INDEX "idx_followers_following_id" ON "public"."followers" USING "btree" ("following_id");
+CREATE INDEX "idx_likes_post_id" ON "public"."likes" USING "btree" ("post_id");
+CREATE INDEX "idx_notifications_user_id" ON "public"."notifications" USING "btree" ("user_id");
+CREATE INDEX "idx_posts_user_id" ON "public"."posts" USING "btree" ("user_id");
+CREATE INDEX "idx_question_notifications_created_at" ON "public"."question_notifications" USING "btree" ("created_at" DESC);
+CREATE INDEX "idx_question_notifications_is_read" ON "public"."question_notifications" USING "btree" ("is_read");
+CREATE INDEX "idx_question_notifications_question_id" ON "public"."question_notifications" USING "btree" ("question_id");
+CREATE INDEX "idx_question_notifications_user_id" ON "public"."question_notifications" USING "btree" ("user_id");
+CREATE INDEX "idx_question_tags_question_id" ON "public"."question_tags" USING "btree" ("question_id");
+CREATE INDEX "idx_question_tags_tag_name" ON "public"."question_tags" USING "btree" ("tag_name");
+CREATE INDEX "idx_question_votes_question_id" ON "public"."question_votes" USING "btree" ("question_id");
+CREATE INDEX "idx_question_votes_user_id" ON "public"."question_votes" USING "btree" ("user_id");
+CREATE INDEX "idx_questions_body_gin" ON "public"."questions" USING "gin" ("to_tsvector"('english', "body"));
+CREATE INDEX "idx_questions_category" ON "public"."questions" USING "btree" ("category");
+CREATE INDEX "idx_questions_created_at" ON "public"."questions" USING "btree" ("created_at" DESC);
+CREATE INDEX "idx_questions_status" ON "public"."questions" USING "btree" ("status");
+CREATE INDEX "idx_questions_title_gin" ON "public"."questions" USING "gin" ("to_tsvector"('english', "title"));
+CREATE INDEX "idx_questions_user_id" ON "public"."questions" USING "btree" ("user_id");
+```
+
+## 5. Row Level Security (RLS) (SQL)
+```sql
+ALTER TABLE "public"."ai_answers" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."answer_comments" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."answer_notifications" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."answer_tags" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."answer_votes" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."answers" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."chat_members" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."chat_messages" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."chats" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."comment_likes" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."comments" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."content_flags" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."filemodels" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."followers" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."likes" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."notifications" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."posts" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."question_notifications" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."question_tags" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."question_votes" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."questions" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."user_roles" ENABLE ROW LEVEL SECURITY;
+
+-- Policies (truncated for brevity, add all CREATE POLICY statements from the schema file)
+-- Example:
+CREATE POLICY "AI can delete answer_tags" ON "public"."answer_tags" FOR DELETE USING (true);
+CREATE POLICY "AI can insert ai_answers" ON "public"."ai_answers" FOR INSERT WITH CHECK (true);
+-- (Add all other CREATE POLICY statements from the schema file here)
+``` 
