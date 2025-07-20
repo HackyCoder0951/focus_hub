@@ -62,7 +62,6 @@
 22. Table 22: question_tags
 23. Table 23: reputation_events
 24. Table 24: user_roles
-25. Table 25: votes
 
 ---
 
