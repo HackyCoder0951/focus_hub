@@ -451,302 +451,32 @@ _See Indexes section below for index details._
 | content_flags | content_flags_pkey            | id              | PK      |           |
 
 ## Views
-
-| Name | Definition |
-|------|------------|
-| question_stats | 
-```sql
-CREATE OR REPLACE VIEW "public"."question_stats" AS
- SELECT "q"."id",
-    "q"."title",
-    "q"."view_count",
-    count(DISTINCT "a"."id") AS "answer_count",
-    count(DISTINCT "qv"."id") AS "vote_count",
-    (sum(CASE WHEN ("qv"."vote_value" = 1) THEN 1 ELSE 0 END) - sum(CASE WHEN ("qv"."vote_value" = '-1'::integer) THEN 1 ELSE 0 END)) AS "vote_score"
-   FROM (("public"."questions" "q"
-     LEFT JOIN "public"."answers" "a" ON (("q"."id" = "a"."question_id")))
-     LEFT JOIN "public"."question_votes" "qv" ON (("q"."id" = "qv"."question_id")))
-  GROUP BY "q"."id", "q"."title", "q"."view_count";
-```
-|
+| Name | Description | SQL Reference/Notes |
+|------|-------------|---------------------|
+| question_stats | Aggregates question stats (answers, votes, etc.) | See schema for full SQL |
 
 ## Functions
-
-| Name | Definition |
-|------|------------|
-| broadcast_comment_update | 
-```sql
-CREATE OR REPLACE FUNCTION "public"."broadcast_comment_update"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    AS $$
-DECLARE
-    comment_data JSONB;
-BEGIN
-    -- Build comment data
-    comment_data := json_build_object(
-        'id', NEW.id,
-        'answer_id', NEW.answer_id,
-        'user_id', NEW.user_id,
-        'body', NEW.body,
-        'parent_comment_id', NEW.parent_comment_id,
-        'created_at', NEW.created_at,
-        'action', TG_OP
-    );
-    
-    -- Broadcast the comment update
-    PERFORM pg_notify(
-        'comment_update',
-        comment_data::text
-    );
-    
-    RETURN NEW;
-END;
-$$;
-```
-|
-| broadcast_notification_update | 
-```sql
-CREATE OR REPLACE FUNCTION "public"."broadcast_notification_update"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    AS $$
-DECLARE
-    notification_data JSONB;
-BEGIN
-    -- Build notification data
-    notification_data := json_build_object(
-        'id', NEW.id,
-        'user_id', NEW.user_id,
-        'notification_type', NEW.notification_type,
-        'message', NEW.message,
-        'is_read', NEW.is_read,
-        'related_id', NEW.related_id,
-        'created_at', NEW.created_at,
-        'action', TG_OP
-    );
-    
-    -- Broadcast the notification update
-    PERFORM pg_notify(
-        'notification_update',
-        notification_data::text
-    );
-    
-    RETURN NEW;
-END;
-$$;
-```
-|
-| broadcast_vote_update | 
-```sql
-CREATE OR REPLACE FUNCTION "public"."broadcast_vote_update"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    AS $$
-DECLARE
-    vote_count INTEGER;
-    vote_score INTEGER;
-    target_type TEXT;
-    target_id UUID;
-BEGIN
-    -- Determine if this is a question or answer vote
-    IF TG_TABLE_NAME = 'question_votes' THEN
-        target_type := 'question';
-        target_id := NEW.question_id;
-        
-        -- Calculate vote count and score for question
-        SELECT 
-            COUNT(*),
-            COALESCE(SUM(vote_value), 0)
-        INTO vote_count, vote_score
-        FROM question_votes 
-        WHERE question_id = NEW.question_id;
-        
-        -- Update question view_count (we'll use this for vote count)
-        UPDATE questions 
-        SET view_count = vote_count 
-        WHERE id = NEW.question_id;
-        
-    ELSIF TG_TABLE_NAME = 'answer_votes' THEN
-        target_type := 'answer';
-        target_id := NEW.answer_id;
-        
-        -- Calculate vote count and score for answer
-        SELECT 
-            COUNT(*),
-            COALESCE(SUM(vote_value), 0)
-        INTO vote_count, vote_score
-        FROM answer_votes 
-        WHERE answer_id = NEW.answer_id;
-    END IF;
-    
-    -- Broadcast the update via realtime
-    PERFORM pg_notify(
-        'vote_update',
-        json_build_object(
-            'target_type', target_type,
-            'target_id', target_id,
-            'vote_count', vote_count,
-            'vote_score', vote_score,
-            'user_id', NEW.user_id,
-            'vote_value', NEW.vote_value
-        )::text
-    );
-    
-    RETURN NEW;
-END;
-$$;
-```
-|
-| create_realtime_notifications | 
-```sql
-CREATE OR REPLACE FUNCTION "public"."create_realtime_notifications"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    AS $$
-BEGIN
-    -- Create notification for new answer
-    IF TG_OP = 'INSERT' AND TG_TABLE_NAME = 'answers' THEN
-        INSERT INTO question_notifications (
-            question_id, 
-            user_id, 
-            notification_type, 
-            message, 
-            related_id
-        )
-        SELECT 
-            NEW.question_id,
-            q.user_id,
-            'answer',
-            'Someone answered your question: ' || LEFT(q.title, 50) || '...',
-            NEW.id
-        FROM questions q
-        WHERE q.id = NEW.question_id AND q.user_id != NEW.user_id;
-    END IF;
-    
-    -- Create notification for new comment
-    IF TG_OP = 'INSERT' AND TG_TABLE_NAME = 'answer_comments' THEN
-        INSERT INTO answer_notifications (
-            answer_id,
-            user_id,
-            notification_type,
-            message,
-            related_id
-        )
-        SELECT 
-            NEW.answer_id,
-            a.user_id,
-            'comment',
-            'Someone commented on your answer',
-            NEW.id
-        FROM answers a
-        WHERE a.id = NEW.answer_id AND a.user_id != NEW.user_id;
-    END IF;
-    
-    -- Create notification for vote
-    IF TG_OP = 'INSERT' AND TG_TABLE_NAME = 'question_votes' THEN
-        INSERT INTO question_notifications (
-            question_id,
-            user_id,
-            notification_type,
-            message,
-            related_id
-        )
-        SELECT 
-            NEW.question_id,
-            q.user_id,
-            'vote',
-            CASE 
-                WHEN NEW.vote_value = 1 THEN 'Someone upvoted your question'
-                ELSE 'Someone downvoted your question'
-            END,
-            NEW.id
-        FROM questions q
-        WHERE q.id = NEW.question_id AND q.user_id != NEW.user_id;
-    END IF;
-    
-    IF TG_OP = 'INSERT' AND TG_TABLE_NAME = 'answer_votes' THEN
-        INSERT INTO answer_notifications (
-            answer_id,
-            user_id,
-            notification_type,
-            message,
-            related_id
-        )
-        SELECT 
-            NEW.answer_id,
-            a.user_id,
-            'vote',
-            CASE 
-                WHEN NEW.vote_value = 1 THEN 'Someone upvoted your answer'
-                ELSE 'Someone downvoted your answer'
-            END,
-            NEW.id
-        FROM answers a
-        WHERE a.id = NEW.answer_id AND a.user_id != NEW.user_id;
-    END IF;
-    
-    RETURN NEW;
-END;
-$$;
-```
-|
+| Name | Description | SQL Reference/Notes |
+|------|-------------|---------------------|
+| broadcast_comment_update | Notifies on comment changes | See schema for full SQL |
+| broadcast_notification_update | Notifies on notification changes | See schema for full SQL |
+| broadcast_vote_update | Broadcasts vote changes | See schema for full SQL |
+| create_realtime_notifications | Creates notifications for answers/comments/votes | See schema for full SQL |
 
 ## Triggers
-
-| Name | Table | Event | Function | Definition |
-|------|-------|-------|----------|------------|
-| file_deletion_trigger | filemodels | AFTER DELETE | handle_file_deletion | 
-```sql
-CREATE OR REPLACE TRIGGER "file_deletion_trigger" AFTER DELETE ON "public"."filemodels" FOR EACH ROW EXECUTE FUNCTION "public"."handle_file_deletion"();
-```
-|
-| file_update_trigger | filemodels | AFTER UPDATE | handle_file_update | 
-```sql
-CREATE OR REPLACE TRIGGER "file_update_trigger" AFTER UPDATE ON "public"."filemodels" FOR EACH ROW EXECUTE FUNCTION "public"."handle_file_update"();
-```
-|
-| realtime_answer_notification_update_trigger | answer_notifications | AFTER INSERT OR DELETE OR UPDATE | broadcast_notification_update | 
-```sql
-CREATE OR REPLACE TRIGGER "realtime_answer_notification_update_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."answer_notifications" FOR EACH ROW EXECUTE FUNCTION "public"."broadcast_notification_update"();
-```
-|
-| realtime_answer_vote_notification_trigger | answer_votes | AFTER INSERT | create_realtime_notifications | 
-```sql
-CREATE OR REPLACE TRIGGER "realtime_answer_vote_notification_trigger" AFTER INSERT ON "public"."answer_votes" FOR EACH ROW EXECUTE FUNCTION "public"."create_realtime_notifications"();
-```
-|
-| realtime_answer_vote_update_trigger | answer_votes | AFTER INSERT OR DELETE OR UPDATE | broadcast_vote_update | 
-```sql
-CREATE OR REPLACE TRIGGER "realtime_answer_vote_update_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."answer_votes" FOR EACH ROW EXECUTE FUNCTION "public"."broadcast_vote_update"();
-```
-|
-| realtime_comment_notification_trigger | answer_comments | AFTER INSERT | create_realtime_notifications | 
-```sql
-CREATE OR REPLACE TRIGGER "realtime_comment_notification_trigger" AFTER INSERT ON "public"."answer_comments" FOR EACH ROW EXECUTE FUNCTION "public"."create_realtime_notifications"();
-```
-|
-| realtime_comment_update_trigger | answer_comments | AFTER INSERT OR DELETE OR UPDATE | broadcast_comment_update | 
-```sql
-CREATE OR REPLACE TRIGGER "realtime_comment_update_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."answer_comments" FOR EACH ROW EXECUTE FUNCTION "public"."broadcast_comment_update"();
-```
-|
-| realtime_notification_creation_trigger | answers | AFTER INSERT | create_realtime_notifications | 
-```sql
-CREATE OR REPLACE TRIGGER "realtime_notification_creation_trigger" AFTER INSERT ON "public"."answers" FOR EACH ROW EXECUTE FUNCTION "public"."create_realtime_notifications"();
-```
-|
-| realtime_notification_update_trigger | question_notifications | AFTER INSERT OR DELETE OR UPDATE | broadcast_notification_update | 
-```sql
-CREATE OR REPLACE TRIGGER "realtime_notification_update_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."question_notifications" FOR EACH ROW EXECUTE FUNCTION "public"."broadcast_notification_update"();
-```
-|
-| realtime_vote_notification_trigger | question_votes | AFTER INSERT | create_realtime_notifications | 
-```sql
-CREATE OR REPLACE TRIGGER "realtime_vote_notification_trigger" AFTER INSERT ON "public"."question_votes" FOR EACH ROW EXECUTE FUNCTION "public"."create_realtime_notifications"();
-```
-|
-| realtime_vote_update_trigger | question_votes | AFTER INSERT OR DELETE OR UPDATE | broadcast_vote_update | 
-```sql
-CREATE OR REPLACE TRIGGER "realtime_vote_update_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."question_votes" FOR EACH ROW EXECUTE FUNCTION "public"."broadcast_vote_update"();
-```
-|
+| Name | Table | Event/Timing | Function | Description |
+|------|-------|--------------|----------|-------------|
+| file_deletion_trigger | filemodels | AFTER DELETE | handle_file_deletion | Cleans up files on delete |
+| file_update_trigger | filemodels | AFTER UPDATE | handle_file_update | Cleans up old files on update |
+| realtime_answer_notification_update_trigger | answer_notifications | AFTER INSERT/DELETE/UPDATE | broadcast_notification_update | Broadcasts answer notification changes |
+| realtime_answer_vote_notification_trigger | answer_votes | AFTER INSERT | create_realtime_notifications | Notifies on answer votes |
+| realtime_answer_vote_update_trigger | answer_votes | AFTER INSERT/DELETE/UPDATE | broadcast_vote_update | Broadcasts answer vote changes |
+| realtime_comment_notification_trigger | answer_comments | AFTER INSERT | create_realtime_notifications | Notifies on answer comments |
+| realtime_comment_update_trigger | answer_comments | AFTER INSERT/DELETE/UPDATE | broadcast_comment_update | Broadcasts answer comment changes |
+| realtime_notification_creation_trigger | answers | AFTER INSERT | create_realtime_notifications | Notifies on new answers |
+| realtime_notification_update_trigger | question_notifications | AFTER INSERT/DELETE/UPDATE | broadcast_notification_update | Broadcasts question notification changes |
+| realtime_vote_notification_trigger | question_votes | AFTER INSERT | create_realtime_notifications | Notifies on question votes |
+| realtime_vote_update_trigger | question_votes | AFTER INSERT/DELETE/UPDATE | broadcast_vote_update | Broadcasts question vote changes |
 
 ## RLS Policies
 
