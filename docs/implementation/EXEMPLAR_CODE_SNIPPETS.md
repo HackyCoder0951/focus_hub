@@ -148,6 +148,22 @@ export function useRealtimePosts(onNewPost) {
 }
 ```
 
+**Create Post Form (React)**
+```jsx
+import { useState } from 'react';
+import { createPost } from '../api/posts';
+
+export function CreatePostForm({ userId }) {
+  const [content, setContent] = useState('');
+  return (
+    <form onSubmit={async e => { e.preventDefault(); await createPost({ userId, content }); setContent(''); }}>
+      <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="What's on your mind?" />
+      <button type="submit">Post</button>
+    </form>
+  );
+}
+```
+
 ---
 
 ## 3. Real-time Chat
@@ -179,6 +195,22 @@ export function useRealtimeChat(chatId, onMessage) {
 }
 ```
 
+**Send Message Form (React)**
+```jsx
+import { useState } from 'react';
+import { sendMessage } from '../api/chat';
+
+export function SendMessageForm({ chatId, senderId }) {
+  const [content, setContent] = useState('');
+  return (
+    <form onSubmit={async e => { e.preventDefault(); await sendMessage({ chatId, senderId, content }); setContent(''); }}>
+      <input value={content} onChange={e => setContent(e.target.value)} placeholder="Type a message..." />
+      <button type="submit">Send</button>
+    </form>
+  );
+}
+```
+
 ---
 
 ## 4. Q&A Community
@@ -204,6 +236,24 @@ export async function voteAnswer({ answerId, userId, value }) {
     .upsert([{ answer_id: answerId, user_id: userId, value }], { onConflict: ['answer_id', 'user_id'] });
   if (error) throw error;
   return data;
+}
+```
+
+**Ask Question Form (React)**
+```jsx
+import { useState } from 'react';
+import { postQuestion } from '../api/answers';
+
+export function AskQuestionForm({ userId }) {
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  return (
+    <form onSubmit={async e => { e.preventDefault(); await postQuestion({ userId, title, body, tags: [] }); setTitle(''); setBody(''); }}>
+      <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Question title" />
+      <textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Describe your question..." />
+      <button type="submit">Ask</button>
+    </form>
+  );
 }
 ```
 
@@ -236,6 +286,22 @@ export async function listResources(userId) {
 }
 ```
 
+**Upload Resource Form (React)**
+```jsx
+import { useState } from 'react';
+import { uploadResource } from '../api/resources';
+
+export function UploadResourceForm({ userId }) {
+  const [file, setFile] = useState(null);
+  return (
+    <form onSubmit={async e => { e.preventDefault(); if (file) await uploadResource(file, userId); }}>
+      <input type="file" onChange={e => setFile(e.target.files[0])} />
+      <button type="submit">Upload</button>
+    </form>
+  );
+}
+```
+
 ---
 
 ## 6. User Profiles
@@ -262,6 +328,22 @@ export async function followUser(followerId, followingId) {
     .insert([{ follower_id: followerId, following_id: followingId }]);
   if (error) throw error;
   return data;
+}
+```
+
+**Edit Profile Form (React)**
+```jsx
+import { useState } from 'react';
+import { updateProfile } from '../api/profile';
+
+export function EditProfileForm({ userId, initialProfile }) {
+  const [bio, setBio] = useState(initialProfile.bio || '');
+  return (
+    <form onSubmit={async e => { e.preventDefault(); await updateProfile(userId, { bio }); }}>
+      <textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="Your bio" />
+      <button type="submit">Save</button>
+    </form>
+  );
 }
 ```
 
