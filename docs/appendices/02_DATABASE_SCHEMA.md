@@ -396,6 +396,832 @@ CREATE TYPE notification_type AS ENUM ('like', 'comment', 'follow', 'answer', 'm
 - `is_read`: Read status
 - `created_at`: Creation timestamp
 
+### Table: ai_answers
+**Description:** AI-generated answers to questions.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."ai_answers" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "question_id" uuid,
+    "answer_text" text NOT NULL,
+    "model_used" text,
+    "tokens_used" integer,
+    "processing_time_ms" integer,
+    "user_feedback_rating" integer,
+    "generation_attempts" integer DEFAULT 1,
+    "created_at" timestamp with time zone DEFAULT now(),
+    "user_id" uuid,
+    "generated_by" text,
+    CONSTRAINT "ai_answers_user_feedback_rating_check" CHECK (("user_feedback_rating" >= 1 AND "user_feedback_rating" <= 5))
+);
+```
+
+| Column                | Data Type      | Constraints/Description                                 |
+|-----------------------|---------------|---------------------------------------------------------|
+| id                    | uuid          | PK, DEFAULT gen_random_uuid(), NOT NULL                 |
+| question_id           | uuid          | FK → questions(id)                                      |
+| answer_text           | text          | NOT NULL                                               |
+| model_used            | text          |                                                        |
+| tokens_used           | integer       |                                                        |
+| processing_time_ms    | integer       |                                                        |
+| user_feedback_rating  | integer       | CHECK (1 <= value <= 5)                                |
+| generation_attempts   | integer       | DEFAULT 1                                              |
+| created_at            | timestamptz   | DEFAULT now()                                          |
+| user_id               | uuid          | FK → profiles(id), ON DELETE SET NULL                  |
+| generated_by          | text          |                                                        |
+
+**Foreign Keys:**
+- question_id → questions(id)
+- user_id → profiles(id) (ON DELETE SET NULL)
+
+**Check Constraints:**
+- user_feedback_rating must be between 1 and 5
+
+---
+
+### Table: answer_comments
+**Description:** Comments on answers.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."answer_comments" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "answer_id" uuid,
+    "user_id" uuid,
+    "parent_comment_id" uuid,
+    "body" text NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now(),
+    "updated_at" timestamp with time zone DEFAULT now()
+);
+```
+
+| Column             | Data Type    | Constraints/Description                |
+|--------------------|-------------|----------------------------------------|
+| id                 | uuid        | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| answer_id          | uuid        | FK → answers(id)                       |
+| user_id            | uuid        | FK → auth.users(id)                    |
+| parent_comment_id  | uuid        | FK → answer_comments(id)               |
+| body               | text        | NOT NULL                               |
+| created_at         | timestamptz | DEFAULT now()                          |
+| updated_at         | timestamptz | DEFAULT now()                          |
+
+**Foreign Keys:**
+- answer_id → answers(id)
+- user_id → auth.users(id)
+- parent_comment_id → answer_comments(id)
+
+---
+
+### Table: answer_notifications
+**Description:** Notifications for answer-related activities.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."answer_notifications" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "answer_id" uuid,
+    "user_id" uuid,
+    "notification_type" text,
+    "message" text NOT NULL,
+    "is_read" boolean DEFAULT false,
+    "related_id" uuid,
+    "created_at" timestamp with time zone DEFAULT now(),
+    CONSTRAINT "answer_notifications_notification_type_check" CHECK ("notification_type" = ANY (ARRAY['comment', 'vote', 'acceptance', 'mention']))
+);
+```
+
+| Column             | Data Type    | Constraints/Description                |
+|--------------------|-------------|----------------------------------------|
+| id                 | uuid        | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| answer_id          | uuid        | FK → answers(id)                       |
+| user_id            | uuid        | FK → auth.users(id)                    |
+| notification_type  | text        | CHECK (in 'comment','vote','acceptance','mention') |
+| message            | text        | NOT NULL                               |
+| is_read            | boolean     | DEFAULT false                          |
+| related_id         | uuid        |                                        |
+| created_at         | timestamptz | DEFAULT now()                          |
+
+**Foreign Keys:**
+- answer_id → answers(id)
+- user_id → auth.users(id)
+
+**Check Constraints:**
+- notification_type must be one of 'comment', 'vote', 'acceptance', 'mention'
+
+---
+
+### Table: answer_tags
+**Description:** Tags associated with answers for categorization.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."answer_tags" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "answer_id" uuid,
+    "tag_name" text NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now()
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| answer_id   | uuid         | FK → answers(id)                       |
+| tag_name    | text         | NOT NULL                               |
+| created_at  | timestamptz  | DEFAULT now()                          |
+
+**Foreign Keys:**
+- answer_id → answers(id)
+
+**Unique Constraints:**
+- (answer_id, tag_name)
+
+---
+
+### Table: answer_votes
+**Description:** Votes (upvotes/downvotes) on answers.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."answer_votes" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "answer_id" uuid,
+    "user_id" uuid,
+    "vote_value" smallint,
+    "created_at" timestamp with time zone DEFAULT now(),
+    "updated_at" timestamp with time zone DEFAULT now(),
+    CONSTRAINT "answer_votes_vote_value_check" CHECK ("vote_value" = ANY (ARRAY[1, -1]))
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| answer_id   | uuid         | FK → answers(id)                       |
+| user_id     | uuid         | FK → auth.users(id)                    |
+| vote_value  | smallint     | CHECK (1 or -1)                        |
+| created_at  | timestamptz  | DEFAULT now()                          |
+| updated_at  | timestamptz  | DEFAULT now()                          |
+
+**Foreign Keys:**
+- answer_id → answers(id)
+- user_id → auth.users(id)
+
+**Unique Constraints:**
+- (answer_id, user_id)
+
+---
+
+### Table: answers
+**Description:** Answers to questions.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."answers" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "question_id" uuid,
+    "user_id" uuid,
+    "body" text NOT NULL,
+    "is_accepted" boolean DEFAULT false,
+    "created_at" timestamp with time zone DEFAULT now(),
+    "updated_at" timestamp with time zone DEFAULT now()
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| question_id | uuid         | FK → questions(id)                     |
+| user_id     | uuid         | FK → auth.users(id)                    |
+| body        | text         | NOT NULL                               |
+| is_accepted | boolean      | DEFAULT false                          |
+| created_at  | timestamptz  | DEFAULT now()                          |
+| updated_at  | timestamptz  | DEFAULT now()                          |
+
+**Foreign Keys:**
+- question_id → questions(id)
+- user_id → auth.users(id)
+
+---
+
+### Table: chat_members
+**Description:** Members of chat groups.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."chat_members" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "chat_id" uuid,
+    "user_id" uuid,
+    "joined_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "is_admin" boolean DEFAULT false,
+    "typing" boolean DEFAULT false
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| chat_id     | uuid         | FK → chats(id)                         |
+| user_id     | uuid         | FK → profiles(id)                      |
+| joined_at   | timestamptz  | DEFAULT now(), NOT NULL                |
+| is_admin    | boolean      | DEFAULT false                          |
+| typing      | boolean      | DEFAULT false                          |
+
+**Foreign Keys:**
+- chat_id → chats(id)
+- user_id → profiles(id)
+
+**Unique Constraints:**
+- (chat_id, user_id)
+
+---
+
+### Table: chat_messages
+**Description:** Messages in chats.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."chat_messages" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "chat_id" uuid,
+    "user_id" uuid,
+    "content" text,
+    "media_url" text,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| chat_id     | uuid         | FK → chats(id)                         |
+| user_id     | uuid         | FK → profiles(id)                      |
+| content     | text         |                                        |
+| media_url   | text         |                                        |
+| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
+
+**Foreign Keys:**
+- chat_id → chats(id)
+- user_id → profiles(id)
+
+---
+
+### Table: chats
+**Description:** Chat groups and direct messages.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."chats" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "is_group" boolean DEFAULT false NOT NULL,
+    "name" text,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "created_by" uuid
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| is_group    | boolean      | DEFAULT false, NOT NULL                |
+| name        | text         |                                        |
+| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
+| created_by  | uuid         |                                        |
+
+---
+
+### Table: comment_likes
+**Description:** Likes on comments.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."comment_likes" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "comment_id" uuid,
+    "user_id" uuid,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| comment_id  | uuid         | FK → comments(id)                      |
+| user_id     | uuid         | FK → profiles(id)                      |
+| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
+
+**Foreign Keys:**
+- comment_id → comments(id)
+- user_id → profiles(id)
+
+**Unique Constraints:**
+- (comment_id, user_id)
+
+---
+
+### Table: comments
+**Description:** Comments on posts, supporting threading.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."comments" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "post_id" uuid,
+    "user_id" uuid,
+    "content" text NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "parent_id" uuid
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| post_id     | uuid         | FK → posts(id)                         |
+| user_id     | uuid         | FK → profiles(id)                      |
+| content     | text         | NOT NULL                               |
+| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
+| parent_id   | uuid         | FK → comments(id)                      |
+
+**Foreign Keys:**
+- post_id → posts(id)
+- user_id → profiles(id)
+- parent_id → comments(id)
+
+---
+
+### Table: content_flags
+**Description:** Flags for posts or comments for moderation.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."content_flags" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "flagged_by_user_id" uuid NOT NULL,
+    "post_id" uuid,
+    "comment_id" uuid,
+    "reason" text,
+    "created_at" timestamp with time zone DEFAULT now(),
+    "status" text DEFAULT 'pending',
+    CONSTRAINT "only_one_content" CHECK ((("post_id" IS NOT NULL AND "comment_id" IS NULL) OR ("post_id" IS NULL AND "comment_id" IS NOT NULL)))
+);
+```
+
+| Column             | Data Type    | Constraints/Description                |
+|--------------------|-------------|----------------------------------------|
+| id                 | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| flagged_by_user_id | uuid         | FK → profiles(id), NOT NULL            |
+| post_id            | uuid         | FK → posts(id)                         |
+| comment_id         | uuid         | FK → comments(id)                      |
+| reason             | text         |                                        |
+| created_at         | timestamptz  | DEFAULT now()                          |
+| status             | text         | DEFAULT 'pending'                      |
+
+**Foreign Keys:**
+- flagged_by_user_id → profiles(id)
+- post_id → posts(id)
+- comment_id → comments(id)
+
+**Check Constraints:**
+- Only one of post_id or comment_id can be non-null
+
+---
+
+### Table: filemodels
+**Description:** File uploads and metadata.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."filemodels" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid,
+    "file_url" text NOT NULL,
+    "file_name" text NOT NULL,
+    "file_type" text,
+    "file_size" integer,
+    "description" text,
+    "is_public" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| user_id     | uuid         | FK → profiles(id)                      |
+| file_url    | text         | NOT NULL                               |
+| file_name   | text         | NOT NULL                               |
+| file_type   | text         |                                        |
+| file_size   | integer      |                                        |
+| description | text         |                                        |
+| is_public   | boolean      | DEFAULT false, NOT NULL                |
+| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
+
+**Foreign Keys:**
+- user_id → profiles(id)
+
+---
+
+### Table: followers
+**Description:** User following relationships.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."followers" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "follower_id" uuid,
+    "following_id" uuid,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+```
+
+| Column        | Data Type    | Constraints/Description                |
+|---------------|-------------|----------------------------------------|
+| id            | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| follower_id   | uuid         | FK → profiles(id)                      |
+| following_id  | uuid         | FK → profiles(id)                      |
+| created_at    | timestamptz  | DEFAULT now(), NOT NULL                |
+
+**Foreign Keys:**
+- follower_id → profiles(id)
+- following_id → profiles(id)
+
+**Unique Constraints:**
+- (follower_id, following_id)
+
+---
+
+### Table: likes
+**Description:** Likes on posts.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."likes" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid,
+    "post_id" uuid,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| user_id     | uuid         | FK → profiles(id)                      |
+| post_id     | uuid         | FK → posts(id)                         |
+| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
+
+**Foreign Keys:**
+- user_id → profiles(id)
+- post_id → posts(id)
+
+**Unique Constraints:**
+- (user_id, post_id)
+
+---
+
+### Table: notifications
+**Description:** General notifications for users.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."notifications" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid,
+    "type" text NOT NULL,
+    "data" jsonb,
+    "is_read" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| user_id     | uuid         | FK → profiles(id)                      |
+| type        | text         | NOT NULL                               |
+| data        | jsonb        |                                        |
+| is_read     | boolean      | DEFAULT false, NOT NULL                |
+| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
+
+**Foreign Keys:**
+- user_id → profiles(id)
+
+---
+
+### Table: posts
+**Description:** User posts with media support and moderation status.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."posts" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid,
+    "content" text NOT NULL,
+    "media_url" text,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "is_deleted" boolean DEFAULT false NOT NULL,
+    "file_url" text,
+    "image_url" text,
+    "flag_status" text DEFAULT 'normal'
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| user_id     | uuid         | FK → profiles(id)                      |
+| content     | text         | NOT NULL                               |
+| media_url   | text         |                                        |
+| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
+| updated_at  | timestamptz  | DEFAULT now(), NOT NULL                |
+| is_deleted  | boolean      | DEFAULT false, NOT NULL                |
+| file_url    | text         |                                        |
+| image_url   | text         |                                        |
+| flag_status | text         | DEFAULT 'normal'                       |
+
+**Foreign Keys:**
+- user_id → profiles(id)
+
+---
+
+### Table: profiles
+**Description:** User profile information linked to Supabase Auth.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."profiles" (
+    "id" uuid NOT NULL,
+    "email" text NOT NULL,
+    "full_name" text,
+    "avatar_url" text,
+    "bio" text,
+    "location" text,
+    "website" text,
+    "settings" jsonb,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "member_type" text DEFAULT 'student',
+    "status" text DEFAULT 'active',
+    "last_seen" timestamp with time zone DEFAULT now(),
+    CONSTRAINT "member_type_check" CHECK ("member_type" = ANY (ARRAY['student', 'alumni']))
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, NOT NULL, FK → auth.users(id)      |
+| email       | text         | NOT NULL                               |
+| full_name   | text         |                                        |
+| avatar_url  | text         |                                        |
+| bio         | text         |                                        |
+| location    | text         |                                        |
+| website     | text         |                                        |
+| settings    | jsonb        |                                        |
+| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
+| updated_at  | timestamptz  | DEFAULT now(), NOT NULL                |
+| member_type | text         | DEFAULT 'student', CHECK (student,alumni) |
+| status      | text         | DEFAULT 'active'                       |
+| last_seen   | timestamptz  | DEFAULT now()                          |
+
+**Foreign Keys:**
+- id → auth.users(id)
+
+**Check Constraints:**
+- member_type must be 'student' or 'alumni'
+
+---
+
+### Table: question_notifications
+**Description:** Notifications for question-related activities.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."question_notifications" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "question_id" uuid,
+    "user_id" uuid,
+    "notification_type" text,
+    "message" text NOT NULL,
+    "is_read" boolean DEFAULT false,
+    "related_id" uuid,
+    "created_at" timestamp with time zone DEFAULT now(),
+    CONSTRAINT "question_notifications_notification_type_check" CHECK ("notification_type" = ANY (ARRAY['answer', 'comment', 'vote', 'best_answer']))
+);
+```
+
+| Column             | Data Type    | Constraints/Description                |
+|--------------------|-------------|----------------------------------------|
+| id                 | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| question_id        | uuid         | FK → questions(id)                     |
+| user_id            | uuid         | FK → auth.users(id)                    |
+| notification_type  | text         | CHECK (in 'answer','comment','vote','best_answer') |
+| message            | text         | NOT NULL                               |
+| is_read            | boolean      | DEFAULT false                          |
+| related_id         | uuid         |                                        |
+| created_at         | timestamptz  | DEFAULT now()                          |
+
+**Foreign Keys:**
+- question_id → questions(id)
+- user_id → auth.users(id)
+
+**Check Constraints:**
+- notification_type must be one of 'answer', 'comment', 'vote', 'best_answer'
+
+---
+
+### Table: question_votes
+**Description:** Votes (upvotes/downvotes) on questions.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."question_votes" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "question_id" uuid,
+    "user_id" uuid,
+    "vote_value" smallint,
+    "created_at" timestamp with time zone DEFAULT now(),
+    "updated_at" timestamp with time zone DEFAULT now(),
+    CONSTRAINT "question_votes_vote_value_check" CHECK ("vote_value" = ANY (ARRAY[1, -1]))
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| question_id | uuid         | FK → questions(id)                     |
+| user_id     | uuid         | FK → auth.users(id)                    |
+| vote_value  | smallint     | CHECK (1 or -1)                        |
+| created_at  | timestamptz  | DEFAULT now()                          |
+| updated_at  | timestamptz  | DEFAULT now()                          |
+
+**Foreign Keys:**
+- question_id → questions(id)
+- user_id → auth.users(id)
+
+**Unique Constraints:**
+- (question_id, user_id)
+
+---
+
+### Table: questions
+**Description:** Main questions table for the Q&A system.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."questions" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid,
+    "title" text NOT NULL,
+    "body" text NOT NULL,
+    "category" text,
+    "status" text DEFAULT 'open',
+    "best_answer_id" uuid,
+    "view_count" integer DEFAULT 0,
+    "created_at" timestamp with time zone DEFAULT now(),
+    "updated_at" timestamp with time zone DEFAULT now(),
+    CONSTRAINT "questions_status_check" CHECK ("status" = ANY (ARRAY['open', 'closed', 'duplicate']))
+);
+```
+
+| Column         | Data Type    | Constraints/Description                |
+|----------------|-------------|----------------------------------------|
+| id             | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| user_id        | uuid         | FK → profiles(id)                      |
+| title          | text         | NOT NULL                               |
+| body           | text         | NOT NULL                               |
+| category       | text         |                                        |
+| status         | text         | DEFAULT 'open', CHECK (open,closed,duplicate) |
+| best_answer_id | uuid         |                                        |
+| view_count     | integer      | DEFAULT 0                              |
+| created_at     | timestamptz  | DEFAULT now()                          |
+| updated_at     | timestamptz  | DEFAULT now()                          |
+
+**Foreign Keys:**
+- user_id → profiles(id)
+
+**Check Constraints:**
+- status must be 'open', 'closed', or 'duplicate'
+
+---
+
+### Table: question_tags
+**Description:** Tags associated with questions for categorization.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."question_tags" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "question_id" uuid,
+    "tag_name" text NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now()
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| question_id | uuid         | FK → questions(id)                     |
+| tag_name    | text         | NOT NULL                               |
+| created_at  | timestamptz  | DEFAULT now()                          |
+
+**Foreign Keys:**
+- question_id → questions(id)
+
+**Unique Constraints:**
+- (question_id, tag_name)
+
+---
+
+### Table: reputation_events
+**Description:** Tracks user reputation changes.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."reputation_events" (
+    "id" integer NOT NULL,
+    "user_id" uuid,
+    "type" text NOT NULL,
+    "value" integer NOT NULL,
+    "related_id" integer,
+    "created_at" timestamp with time zone DEFAULT now()
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | integer      | PK                                     |
+| user_id     | uuid         | FK → auth.users(id)                    |
+| type        | text         | NOT NULL                               |
+| value       | integer      | NOT NULL                               |
+| related_id  | integer      |                                        |
+| created_at  | timestamptz  | DEFAULT now()                          |
+
+**Foreign Keys:**
+- user_id → auth.users(id)
+
+---
+
+### Table: tags
+**Description:** Global tags for categorization.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."tags" (
+    "id" integer NOT NULL,
+    "name" text NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now()
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | integer      | PK                                     |
+| name        | text         | NOT NULL, UNIQUE                       |
+| created_at  | timestamptz  | DEFAULT now()                          |
+
+**Unique Constraints:**
+- name
+
+---
+
+### Table: user_roles
+**Description:** Role-based access control for admin and user permissions.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."user_roles" (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" uuid NOT NULL,
+    "role" app_role DEFAULT 'user' NOT NULL,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | uuid         | PK, DEFAULT gen_random_uuid(), NOT NULL|
+| user_id     | uuid         | FK → auth.users(id), NOT NULL          |
+| role        | app_role     | DEFAULT 'user', NOT NULL               |
+| created_at  | timestamptz  | DEFAULT now(), NOT NULL                |
+
+**Foreign Keys:**
+- user_id → auth.users(id)
+
+**Unique Constraints:**
+- (user_id, role)
+
+---
+
+### Table: votes
+**Description:** Legacy votes table for questions and answers.
+
+```sql
+CREATE TABLE IF NOT EXISTS "public"."votes" (
+    "id" integer NOT NULL,
+    "user_id" uuid,
+    "target_id" integer NOT NULL,
+    "target_type" text,
+    "value" smallint,
+    "created_at" timestamp with time zone DEFAULT now(),
+    CONSTRAINT "votes_target_type_check" CHECK ("target_type" = ANY (ARRAY['question', 'answer'])),
+    CONSTRAINT "votes_value_check" CHECK ("value" = ANY (ARRAY[1, -1]))
+);
+```
+
+| Column      | Data Type    | Constraints/Description                |
+|-------------|-------------|----------------------------------------|
+| id          | integer      | PK                                     |
+| user_id     | uuid         | FK → auth.users(id)                    |
+| target_id   | integer      | NOT NULL                               |
+| target_type | text         | CHECK ('question' or 'answer')         |
+| value       | smallint     | CHECK (1 or -1)                        |
+| created_at  | timestamptz  | DEFAULT now()                          |
+
+**Foreign Keys:**
+- user_id → auth.users(id)
+
+**Unique Constraints:**
+- (user_id, target_id, target_type)
+
 ---
 
 ## 3. Relationships
