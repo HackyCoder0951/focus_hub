@@ -295,3 +295,20 @@ flowchart TD
 Notes:
 - Preconditions: User authenticated; target post exists.
 - Postconditions: Comment stored; visible under the post; notifications may be triggered.
+
+---
+
+## 14. SDLC Flow (Mermaid)
+
+```mermaid
+graph LR
+	A[Requirements & Planning] --> B[Design & Architecture]
+	B --> C[Implementation]
+	C --> D[Testing & QA]
+	D --> E[Deployment & Release]
+	E --> F[Maintenance & Ops]
+
+	F -. backlog/bugs .-> A
+	D -. defects .-> C
+	C -. design adjustments .-> B
+```
