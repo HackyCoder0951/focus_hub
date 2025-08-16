@@ -10,6 +10,9 @@ This document outlines the software testing approach and detailed test cases for
 - **Automated Testing** for API endpoints and core logic (if test framework present)
 - **Regression Testing** after each major update
 - **Smoke Testing** for critical path
+- **Risk-based prioritization:** Auth, posting, and commenting are P0; resources, profile, and Q&A are P1.
+- **Entry criteria:** App builds without errors; Supabase env reachable; seeded user exists (or registration enabled).
+- **Exit criteria:** All P0 scenarios pass; no critical/blocker defects open; smoke E2E run green.
 
 ---
 
@@ -24,9 +27,11 @@ This document outlines the software testing approach and detailed test cases for
 
 ## 4. Test Environment
 - **Frontend:** React (Vite)
-- **Backend/API:** Node.js (Express)
+- **Backend/API:** Node.js (Express) for helpers; Supabase as backend platform
 - **Database:** Supabase (Postgres)
-- **Other:** Real-time features, AI integration
+- **Other:** Realtime features, AI integration (Groq)
+- **Local E2E baseUrl:** http://localhost:5173 (see `cypress.config.cjs`)
+- **Tooling versions (from `package.json`):** Node 18+, TypeScript ~5.5, Vite ~5.4, Cypress ~14.5
 
 ---
 
@@ -50,7 +55,7 @@ This document outlines the software testing approach and detailed test cases for
 | Test Case ID | Title | Preconditions | Steps | Expected Result | Status |
 |--------------|-------|---------------|-------|-----------------|--------|
 | AUTH-REG-01 | Register with valid credentials | User is on Register page | 1. Enter valid email, username, password<br>2. Click Register | User is registered and redirected to dashboard/home | Pass/Fail |
-| AUTH-LOGIN-01 | Login with valid credentials | User is registered | 1. Enter valid email and password<br>2. Click Login | User is logged in and redirected to dashboard/home | Pass/Fail |
+| AUTH-LOGIN-01 | Login with valid credentials | User is registered | 1. Enter valid email and password<br>2. Click Login | User is logged in and redirected to dashboard/home | Pass |
 
 ### Negative / Edge Cases
 | Test Case ID | Title | Preconditions | Steps | Expected Result | Status |
@@ -69,8 +74,8 @@ This document outlines the software testing approach and detailed test cases for
 ### Positive
 | Test Case ID | Title | Preconditions | Steps | Expected Result | Status |
 |--------------|-------|---------------|-------|-----------------|--------|
-| FEED-POST-01 | Create a new post | User is logged in, on Feed page | 1. Enter post content<br>2. Click Post | Post appears in feed, visible to others | Pass/Fail |
-| FEED-COMMENT-01 | Add comment to a post | User is logged in, post exists | 1. Click on post<br>2. Enter comment<br>3. Submit | Comment appears under post | Pass/Fail |
+| FEED-POST-01 | Create a new post | User is logged in, on Feed page | 1. Enter post content<br>2. Click Post | Post appears in feed, visible to others | Pass |
+| FEED-COMMENT-01 | Add comment to a post | User is logged in, post exists | 1. Click on post<br>2. Enter comment<br>3. Submit | Comment appears under post | Pass |
 
 ### Negative / Edge Cases
 | Test Case ID | Title | Preconditions | Steps | Expected Result | Status |
@@ -198,7 +203,101 @@ This document outlines the software testing approach and detailed test cases for
 
 ---
 
-## 7. Notes
+## 7. Test Execution Summary (Cypress)
+- Passed specs (no failure screenshots observed):
+	- `cypress/e2e/login.cy.js` → AUTH-LOGIN-01
+	- `cypress/e2e/post.cy.js` → FEED-POST-01
+	- `cypress/e2e/comment.cy.js` → FEED-COMMENT-01
+- Failures observed (screenshots exist under `cypress/screenshots/`):
+	- Registration flow (registration.cy.js) — screenshot: `Registration Flow -- registers a new user (failed).png`
+	- Profile edit flow (profileEdit.cy.js) — screenshot: `Profile Update via Settings -- updates profile info (failed).png`
+	- Q&A ask flow (qa.cy.js) — screenshot: `Q&A Flow -- posts a new question (failed).png`
+	- Resource upload flow (resource.cy.js) — screenshot: `Resource Upload -- uploads a resource file (failed).png`
+
+Status mapping updated: AUTH-LOGIN-01, FEED-POST-01, FEED-COMMENT-01 are marked Pass. Others remain pending until investigation.
+
+## 8. Test Data & Accounts
+- Recommended seeded user for E2E: `test_user@example.com` with a strong password (store securely via env/secrets).
+- Test content: short lorem text for posts/comments; keep under validation limits.
+- Resource uploads: include a small valid file (see `cypress/fixtures/testfile.txt`) and at least one oversized/unsupported file for negative tests.
+
+## 9. Execution How-To (local)
+- Start the app (Vite dev server) and ensure Supabase env vars are set.
+- Run Cypress E2E (headed/headless) pointing to baseUrl `http://localhost:5173`.
+
+Note: In CI, prefer headless mode and tag smoke tests (login, post, comment) for fast gating.
+
+## 10. CI/CD and Reporting Recommendations
+- Add a CI workflow to run: install → lint → build → unit tests → Cypress (smoke on PRs, full on main).
+- Export Cypress JUnit/HTML reports; archive screenshots/videos on failures.
+- Gate deployments on green smoke tests; run full E2E on nightly or pre-release.
+
+## 11. Security & Performance Testing Outline
+- Security: verify RLS policies with positive/negative data access tests; attempt unauthorized writes to posts/likes/follows/Q&A; test upload policy enforcement.
+- Performance: check feed render under 50 posts; chat message throughput (send 20 msgs in 10s); Q&A list search response times.
+
+## 12. Notes
 - Expand test cases as new features are added.
 - Automate regression and smoke tests where possible.
-- Update documentation with each release. 
+- Update documentation with each release.
+
+---
+
+## 13. Use Case Diagrams (Mermaid)
+
+### 13.1 AUTH-LOGIN-01 — Login with valid credentials
+
+```mermaid
+flowchart TD
+	U[Actor: User]:::actor --> UC((Login))
+	UC --> UI[UI: Login Form]
+	UI --> VALIDATE[Validate Inputs]
+	VALIDATE --> AUTH[Authenticate via Supabase Auth]
+	AUTH --> SESSION[Create Session / Store Token]
+	SESSION --> REDIRECT[Redirect to Dashboard]
+	REDIRECT --> U
+
+	classDef actor fill:#eef,stroke:#446,stroke-width:1px
+```
+
+Notes:
+- Preconditions: Registered user exists; app reachable.
+- Postconditions: Auth session established; user lands on home/dashboard.
+
+### 13.2 FEED-POST-01 — Create a new post
+
+```mermaid
+flowchart TD
+	U[Actor: User]:::actor --> UC((Create Post))
+	UC --> UI[UI: Feed Composer]
+	UI --> VALIDATE[Validate Content (non-empty, length)]
+	VALIDATE --> PERSIST[Persist Post (Supabase DB)]
+	PERSIST --> FEED[Update Feed / Re-fetch]
+	FEED --> NOTIFY[Optional: Notify Followers]
+	FEED --> U
+
+	classDef actor fill:#eef,stroke:#446,stroke-width:1px
+```
+
+Notes:
+- Preconditions: User authenticated.
+- Postconditions: Post stored; appears on feed; side effects (notifications) may occur.
+
+### 13.3 FEED-COMMENT-01 — Add comment to a post
+
+```mermaid
+flowchart TD
+	U[Actor: User]:::actor --> UC((Comment on Post))
+	UC --> UI[UI: Post Detail / Comment Box]
+	UI --> VALIDATE[Validate Comment (non-empty, length)]
+	VALIDATE --> PERSIST[Persist Comment (Supabase DB)]
+	PERSIST --> THREAD[Update Comment Thread]
+	THREAD --> NOTIFY[Optional: Notify Post Author]
+	THREAD --> U
+
+	classDef actor fill:#eef,stroke:#446,stroke-width:1px
+```
+
+Notes:
+- Preconditions: User authenticated; target post exists.
+- Postconditions: Comment stored; visible under the post; notifications may be triggered.
