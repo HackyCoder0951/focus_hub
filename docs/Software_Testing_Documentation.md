@@ -268,15 +268,12 @@ Notes:
 
 ```mermaid
 flowchart TD
-	U[Actor: User]:::actor --> UC((Create Post))
-	UC --> UI[UI: Feed Composer]
-	UI --> VALIDATE[Validate Content (non-empty, length)]
-	VALIDATE --> PERSIST[Persist Post (Supabase DB)]
-	PERSIST --> FEED[Update Feed / Re-fetch]
-	FEED --> NOTIFY[Optional: Notify Followers]
-	FEED --> U
-
-	classDef actor fill:#eef,stroke:#446,stroke-width:1px
+	PUSER[User] --> PUC((Create Post))
+	PUC --> PUI[Feed Composer]
+	PUI --> PVAL[Validate content]
+	PVAL --> PDB[Persist post]
+	PDB --> PFEED[Update feed]
+	PFEED --> PUSER
 ```
 
 Notes:
@@ -287,15 +284,12 @@ Notes:
 
 ```mermaid
 flowchart TD
-	U[Actor: User]:::actor --> UC((Comment on Post))
-	UC --> UI[UI: Post Detail / Comment Box]
-	UI --> VALIDATE[Validate Comment (non-empty, length)]
-	VALIDATE --> PERSIST[Persist Comment (Supabase DB)]
-	PERSIST --> THREAD[Update Comment Thread]
-	THREAD --> NOTIFY[Optional: Notify Post Author]
-	THREAD --> U
-
-	classDef actor fill:#eef,stroke:#446,stroke-width:1px
+	CUSER[User] --> CUC((Comment on Post))
+	CUC --> CUI[Comment Box]
+	CUI --> CVAL[Validate comment]
+	CVAL --> CDB[Persist comment]
+	CDB --> CTHREAD[Update thread]
+	CTHREAD --> CUSER
 ```
 
 Notes:
