@@ -10,82 +10,106 @@ Checklist
 
 ## 1 — What is SDLC and summary for this project
 
-SDLC (Software Development Life Cycle) is a set of structured phases used to plan, design, build, test, deploy, and maintain software. It ensures predictable delivery, quality control, and traceability from requirements through maintenance.
+SDLC (Software Development Life Cycle) is the structured process used to deliver software from idea to production through repeatable phases: requirements, design, implementation, testing, deployment, and maintenance. Its goals are predictability, quality, traceability, and sustainable change.
 
-Summary for this project (`focus_hub`):
-- A component-driven TypeScript + React frontend using Vite and Tailwind.
-- Supabase-backed backend/database with explicit, timestamped SQL migrations in `supabase/migrations/`.
-- Feature-oriented docs in `docs/` (modules: auth, feed, chat, Q&A, resources, etc.).
-- Evidence shows iterative feature work, DB versioning, and security/RLS configuration — consistent with an Agile, incremental SDLC with DevOps practices for infrastructure.
+Project summary (focus_hub):
+- Client: React + TypeScript app scaffolded with Vite and Tailwind; Shadcn-based UI components under `src/components/ui` and layout primitives in `src/components/*`.
+- Backend/data: Supabase provides Auth, Postgres, Realtime, and Storage; the database is managed as code with timestamped migrations in `supabase/migrations/` (schema, RLS, triggers, and storage policies).
+- Features: Authentication and profiles, social feed (posts/likes/follows), chat (1:1 and groups), resources/files, Q&A community (classic + AI-assisted answers), notifications, and realtime UX.
+- Tooling & quality: ESLint, TypeScript, Cypress E2E (`cypress/e2e/*.cy.js`), Testing Library dep present; scripts in `package.json` for dev/build/lint/preview.
+- Lifecycle choice: Evidence supports an Agile, incremental model with DevOps practices (DB-as-code, environment config) and continuous documentation in `docs/`.
+
+Non-functional focus observed: security-by-default (RLS), realtime responsiveness, modularity, and maintainable migrations.
 
 ## 2 — SDLC stages and how this project follows them (mapped to classic SDLC)
 
 ### Requirements / Planning
-Evidence:
-- `docs/` folder contains per-module documentation (`01_supabase_integration_.md` … `10_q_a_module_.md`) and `Project_Documentation.md`, which indicate feature scoping and living requirements.
+Key activities observed:
+- Feature scoping per module (Auth, Feed, Chat, Q&A, Resources, Admin) with living docs in `docs/` and `modules_documentation/`.
+- Database requirements captured as SQL DDL + RLS policies in migrations, ensuring unambiguous persistence rules.
 
-How it maps to classic SDLC:
-- Requirements are written as modular feature docs rather than a single large requirements specification — aligns with iterative requirement capture.
+Primary artifacts:
+- `docs/` chapters (for setup, modules, AI integration) and `docs/Project_Documentation.md` (project-level context).
+- Supabase config `supabase/config.toml` and migration set naming that indicates intent (e.g., `20250706073412_qa_schema.sql`).
+
+Mapping to SDLC:
+- Iterative requirements: small, feature-scoped documentation and schema increments replace a single monolithic spec.
 
 ### Design / Architecture
-Evidence:
-- Component UI library under `src/components/ui/` and `tailwind.config.ts` show a design system decision.
-- Clear separation: `src/contexts/`, `src/integrations/supabase/`, and `src/lib/` indicate architectural patterns and responsibilities.
+Key decisions and structure:
+- Presentation: Shadcn UI pattern with Tailwind (`tailwind.config.ts`, `index.css`) and reusable components (`src/components/ui/*`).
+- State & composition: Context providers (`src/contexts/`), custom hooks (`src/hooks/`), and feature pages (`src/pages/`).
+- Data access: Supabase client and types in `src/integrations/supabase/`, thin API utilities in `src/lib/api.ts` and route helpers in `src/api/*`.
+- Security & policies: RLS-first design embedded in migrations; triggers and functions for business rules.
 
-How it maps:
-- Logical and component-level design performed and documented. Design is modular and reusable, consistent with the design phase of classic SDLC.
+Artifacts:
+- `vite.config.ts`, `tsconfig*.json`, `eslint.config.js` (tooling), and structured component library.
+
+Mapping to SDLC:
+- Architecture is modular and layered, enabling incremental expansion per feature while maintaining separation of concerns.
 
 ### Implementation / Development
-Evidence:
-- Source code in `src/` (pages, components, integrations) and `package.json`/`vite.config.ts` show active implementation.
-- Feature-first file organization (pages per feature) shows incremental development.
+Evidence in code:
+- Feature-first structure in `src/pages/` and `src/components/` (Feed, Chat, Q&A, Admin, Settings, Auth flows).
+- Supabase interactions encapsulated in `src/integrations/supabase/*` and `src/api/*` for client/server boundaries.
+- Scripts in `package.json`: `dev`, `build`, `lint`, `preview` enable local iteration and guardrails.
 
-How it maps:
-- Implementation adheres to componentized, iterative feature development instead of a single big-bang implementation.
+Mapping to SDLC:
+- Iterative, vertical slices by feature; small DB migrations accompany code changes to keep app and schema in lockstep.
 
 ### Testing / QA
-Evidence:
-- Minimal direct evidence of automated tests (no obvious `tests/` folder in provided attachments).
-- Security-focused validation present: RLS and auth migrations (e.g. `posts_rls_authenticated.sql`) and auth docs imply manual/functional checks and security review.
+What exists:
+- Cypress E2E configured in `cypress.config.cjs` (baseUrl `http://localhost:5173`, specs in `cypress/e2e/**/*.cy.js`). Present specs: `login.cy.js`, `post.cy.js`, `comment.cy.js`.
+- Testing dependencies include `@testing-library/react` and `supertest`, enabling unit/integration tests (few or none committed yet).
+- Security checks embedded as RLS policies and permissioned functions in migrations.
 
-How it maps:
-- Testing appears to be partially manual or ad-hoc. Adding automated unit/E2E tests would better reflect the testing phase of SDLC.
+Gaps and pragmatic plan:
+- Add unit tests for UI components and hooks; add integration tests for API utilities.
+- Expand E2E coverage for auth flows, posting, following, notifications, chat, and Q&A (happy path + 1-2 edge cases each).
+- Wire tests into CI once a workflow is added.
 
 ### Deployment / Release
-Evidence:
-- Supabase configuration and timestamped migrations (`supabase/config.toml`, `supabase/migrations/`) imply scripted DB changes and infra awareness.
-- No visible CI/CD workflow files in attachments (e.g., `.github/workflows/`) — deployment may be semi-manual or configured externally.
+Current state:
+- Database deployability is strong: migrations, RLS, triggers, and storage policies are captured in SQL.
+- No CI/CD manifests found (`.github/workflows/*` absent); deploy steps are likely manual or external.
 
-How it maps:
-- Deployment artifacts for database are present; frontend deployment automation is not visible in-repo.
+Recommended release flow (lightweight):
+1) Build frontend (Vite) and publish to hosting (e.g., Netlify/Vercel/static bucket).
+2) Apply Supabase migrations to staging, run smoke tests (E2E subset), then promote to prod.
+3) Automate via a single CI workflow: install deps, lint, build, run unit/E2E headless, apply migrations with approvals.
 
 ### Maintenance / Operations
-Evidence:
-- Migration history and `docs/` indicate ongoing maintenance and iterative updates.
-- `README.md` (present but not reviewed here) is typically used for onboarding and maintenance notes.
+Signals of maintenance:
+- Rich migration history and evolving docs indicate continuous improvement.
+- Central docs (`docs/*`) and a structured component library reduce onboarding burden.
 
-How it maps:
-- Continuous maintenance and iterative improvements are evident.
+Operational concerns and suggestions:
+- Add basic observability (frontend error reporting, performance logs; DB slow query checks).
+- Define a backup/restore note for Supabase (snapshots before major migrations).
 
 ## 3 — Model implications present in this project
 
-Observed development model: Agile / Incremental with DevOps elements.
+Observed model: Agile, feature-driven increments with DevOps practices.
 
-Concrete implications and repo evidence:
-- Feature-driven development: `docs/` with per-module docs and `src/pages/` per feature.
-- Incremental releases: Many small, timestamped SQL migrations (`supabase/migrations/`) indicate incremental DB evolution.
-- DevOps/Infrastructure-as-Code for DB: explicit migration files and `config.toml` for Supabase.
-- Component-driven frontend design: large `src/components/ui/` collection and Tailwind config.
-- Security-first database policies: RLS and storage policies exist as migrations, indicating security is baked into design and deployment steps.
+Implications and evidence:
+- Vertical slices: Features progress end-to-end (UI → API utils → DB migrations) in small steps; `src/pages/*` and `supabase/migrations/*` evolve together.
+- Database-as-code: All schema and policies live in SQL migrations, enabling reproducible environments and safe rollouts.
+- Design system & reuse: Shadcn UI components minimize divergence and speed delivery.
+- Security baked in: RLS policies and role checks in SQL; least-privilege access is enforced at the data layer.
+- Realtime UX: Pub/sub triggers and Realtime publications support responsive interfaces (votes, comments, notifications).
+- AI augmentation: GROQ integration provides AI answers stored alongside human answers, with ratings/metrics fields supporting feedback loops.
 
-Limitations / gaps:
-- Missing or not-obvious automated test suites and CI/CD workflow files in-repo.
-- No visible issue/pr templates, backlog artifacts, or sprint boards to prove specific Agile ceremonies (Scrum vs Kanban).
+Risks and mitigations:
+- Test debt: Start with a unit/E2E baseline to reduce regressions; run Cypress headless in CI.
+- Dual Q&A schemas: Consolidate to the newer normalized Q&A to avoid drift; consider deprecating `questionanswers/*`.
+- Release risk without CI: Add a minimal CI pipeline (build, lint, unit, E2E subset) before applying migrations to prod.
+- Access control drift: Keep RLS policies versioned with any new tables and include policy checks in review.
 
-Recommendations to reinforce model:
-- Add CI workflows to run lint/build/test and apply migrations against preview/staging instances.
-- Add a `tests/` folder with unit tests (Jest/Testing Library) and at least one E2E (Playwright/Cypress) script.
-- Add CONTRIBUTING and PR/issue templates to codify the process.
+Next-step recommendations (low-risk, high-value):
+- Add `.github/workflows/ci.yml` to lint/build/test on PRs and main.
+- Introduce `src/**/*.test.ts(x)` using Testing Library and a few integration tests with `supertest` for API helpers.
+- Expand Cypress to cover chat and notifications; tag specs for smoke vs full runs.
+- Add `CONTRIBUTING.md`, PR template, and issue templates to codify the workflow.
 
 ## 4 — Model ER diagram (Mermaid)
 
