@@ -89,87 +89,278 @@ Recommendations to reinforce model:
 
 ## 4 — Model ER diagram (Mermaid)
 
-Below is a concise ER diagram based on observed modules and migration filenames (`posts`, `qna`, `followers`, `post_media`, `comments`, `votes`, plus Supabase `auth.users`). This is an inferred logical model — adjust to match exact SQL schema when needed.
+Below is an ER diagram derived from the Supabase migrations: profiles, user_roles, posts, likes, followers, notifications, chats, chat_members, chat_messages, filemodels; a legacy Q&A pair (questionanswers, qanotifications); and the newer normalized Q&A (questions, answers, ai_answers, tags, votes, comments, notifications), plus Supabase `auth.users`.
 
 ```mermaid
 erDiagram
-    USERS {
-        uuid id PK "auth.users (supabase)"
+    AUTH_USERS {
+        uuid id PK "auth.users"
         text email
-        text username
+        timestamptz created_at
+    }
+
+    PROFILES {
+        uuid id PK FK "-> AUTH_USERS.id"
+        text email
+        text full_name
+        text avatar_url
+        text bio
+        text location
+        text website
+        jsonb settings
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    USER_ROLES {
+        uuid id PK
+        uuid user_id FK "-> AUTH_USERS.id"
+        text role "app_role enum: admin|user"
         timestamptz created_at
     }
 
     POSTS {
         uuid id PK
-        uuid author_id FK
+        uuid user_id FK "-> PROFILES.id"
         text content
+        text media_url
+        timestamptz created_at
+        timestamptz updated_at
+        boolean is_deleted
+    }
+
+    LIKES {
+        uuid id PK
+        uuid user_id FK "-> PROFILES.id"
+        uuid post_id FK "-> POSTS.id"
         timestamptz created_at
     }
 
-    POST_MEDIA {
+    FOLLOWERS {
         uuid id PK
-        uuid post_id FK
-        text url
-        text mime_type
-    }
-
-    COMMENTS {
-        uuid id PK
-        uuid post_id FK
-        uuid author_id FK
-        text content
+        uuid follower_id FK "-> PROFILES.id"
+        uuid following_id FK "-> PROFILES.id"
         timestamptz created_at
     }
 
+    NOTIFICATIONS {
+        uuid id PK
+        uuid user_id FK "-> PROFILES.id"
+        text type
+        jsonb data
+        boolean is_read
+        timestamptz created_at
+    }
+
+    CHATS {
+        uuid id PK
+        boolean is_group
+        text name
+        timestamptz created_at
+    }
+
+    CHAT_MEMBERS {
+        uuid id PK
+        uuid chat_id FK "-> CHATS.id"
+        uuid user_id FK "-> PROFILES.id"
+        timestamptz joined_at
+    }
+
+    CHAT_MESSAGES {
+        uuid id PK
+        uuid chat_id FK "-> CHATS.id"
+        uuid user_id FK "-> PROFILES.id"
+        text content
+        text media_url
+        timestamptz created_at
+    }
+
+    FILEMODELS {
+        uuid id PK
+        uuid user_id FK "-> PROFILES.id"
+        text file_url
+        text file_name
+        text file_type
+        int file_size
+        text description
+        boolean is_public
+        timestamptz created_at
+    }
+
+    %% Legacy Q&A (early schema)
+    QUESTIONANSWERS {
+        uuid id PK
+        uuid user_id FK "-> PROFILES.id"
+        text question
+        text answer
+        timestamptz created_at
+        timestamptz updated_at
+        boolean is_answered
+    }
+
+    QANOTIFICATIONS {
+        uuid id PK
+        uuid user_id FK "-> PROFILES.id"
+        uuid question_id FK "-> QUESTIONANSWERS.id"
+        text type
+        boolean is_read
+        timestamptz created_at
+    }
+
+    %% New Q&A module (normalized schema)
     QUESTIONS {
         uuid id PK
-        uuid author_id FK
+        uuid user_id FK "-> AUTH_USERS.id"
         text title
         text body
+        text category
+        text status "open|closed|duplicate"
+        uuid best_answer_id
+        int view_count
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    QUESTION_TAGS {
+        uuid id PK
+        uuid question_id FK "-> QUESTIONS.id"
+        text tag_name
+        timestamptz created_at
+    }
+
+    QUESTION_VOTES {
+        uuid id PK
+        uuid question_id FK "-> QUESTIONS.id"
+        uuid user_id FK "-> AUTH_USERS.id"
+        smallint vote_value "1|-1"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    QUESTION_NOTIFICATIONS {
+        uuid id PK
+        uuid question_id FK "-> QUESTIONS.id"
+        uuid user_id FK "-> AUTH_USERS.id"
+        text notification_type "answer|comment|vote|best_answer"
+        text message
+        boolean is_read
+        uuid related_id
         timestamptz created_at
     }
 
     ANSWERS {
         uuid id PK
-        uuid question_id FK
-        uuid author_id FK
+        uuid question_id FK "-> QUESTIONS.id"
+        uuid user_id FK "-> AUTH_USERS.id"
+        text body
+        boolean is_accepted
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    AI_ANSWERS {
+        uuid id PK
+        uuid question_id FK "-> QUESTIONS.id"
+        text answer_text
+        decimal confidence_score
+        text model_used
+        int tokens_used
+        int processing_time_ms
+        decimal relevance_score
+        decimal completeness_score
+        int user_feedback_rating
+        int generation_attempts
+        timestamptz created_at
+    }
+
+    ANSWER_COMMENTS {
+        uuid id PK
+        uuid answer_id FK "-> ANSWERS.id"
+        uuid user_id FK "-> AUTH_USERS.id"
+        uuid parent_comment_id FK "-> ANSWER_COMMENTS.id"
         text body
         timestamptz created_at
+        timestamptz updated_at
     }
 
-    VOTES {
+    ANSWER_VOTES {
         uuid id PK
-        uuid user_id FK
-        text target_type "post|comment|answer"
-        uuid target_id
-        int value "+1/-1"
+        uuid answer_id FK "-> ANSWERS.id"
+        uuid user_id FK "-> AUTH_USERS.id"
+        smallint vote_value "1|-1"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    ANSWER_NOTIFICATIONS {
+        uuid id PK
+        uuid answer_id FK "-> ANSWERS.id"
+        uuid user_id FK "-> AUTH_USERS.id"
+        text notification_type "comment|vote|acceptance|mention"
+        text message
+        boolean is_read
+        uuid related_id
         timestamptz created_at
     }
 
-    FOLLOWERS {
-        uuid follower_id FK
-        uuid following_id FK
+    ANSWER_TAGS {
+        uuid id PK
+        uuid answer_id FK "-> ANSWERS.id"
+        text tag_name
         timestamptz created_at
     }
 
-    USERS ||--o{ POSTS : "authors"
-    POSTS ||--o{ COMMENTS : "has"
-    POSTS ||--o{ POST_MEDIA : "has"
-    USERS ||--o{ COMMENTS : "authors"
+    %% Relationships
+    AUTH_USERS ||--|| PROFILES : "has profile"
+    AUTH_USERS ||--o{ USER_ROLES : "has roles"
+
+    PROFILES ||--o{ POSTS : "authors"
+    POSTS ||--o{ LIKES : "has"
+    PROFILES ||--o{ LIKES : "likes"
+
+    PROFILES ||--o{ FOLLOWERS : "as follower"
+    PROFILES ||--o{ FOLLOWERS : "as following"
+
+    PROFILES ||--o{ NOTIFICATIONS : "receives"
+
+    CHATS ||--o{ CHAT_MEMBERS : "has"
+    PROFILES ||--o{ CHAT_MEMBERS : "joins"
+    CHATS ||--o{ CHAT_MESSAGES : "has"
+    PROFILES ||--o{ CHAT_MESSAGES : "sends"
+
+    PROFILES ||--o{ FILEMODELS : "owns"
+
+    %% Legacy Q&A links
+    PROFILES ||--o{ QUESTIONANSWERS : "asks"
+    QUESTIONANSWERS ||--o{ QANOTIFICATIONS : "triggers"
+    PROFILES ||--o{ QANOTIFICATIONS : "receives"
+
+    %% New Q&A links
+    AUTH_USERS ||--o{ QUESTIONS : "asks"
+    QUESTIONS ||--o{ QUESTION_TAGS : "tagged"
+    QUESTIONS ||--o{ QUESTION_VOTES : "has"
+    AUTH_USERS ||--o{ QUESTION_VOTES : "casts"
+    QUESTIONS ||--o{ QUESTION_NOTIFICATIONS : "notifies"
+    AUTH_USERS ||--o{ QUESTION_NOTIFICATIONS : "receives"
 
     QUESTIONS ||--o{ ANSWERS : "has"
-    USERS ||--o{ ANSWERS : "authors"
+    AUTH_USERS ||--o{ ANSWERS : "answers"
+    QUESTIONS ||--o{ AI_ANSWERS : "AI"
 
-    USERS ||--o{ VOTES : "gives"
+    ANSWERS ||--o{ ANSWER_COMMENTS : "has"
+    AUTH_USERS ||--o{ ANSWER_COMMENTS : "comments"
+    ANSWER_COMMENTS ||--o{ ANSWER_COMMENTS : "replies"
 
-    USERS }o--o{ USERS : "follows" 
-    FOLLOWERS }|..|{ USERS : "relation"
+    ANSWERS ||--o{ ANSWER_VOTES : "has"
+    AUTH_USERS ||--o{ ANSWER_VOTES : "casts"
+    ANSWERS ||--o{ ANSWER_NOTIFICATIONS : "notifies"
+    AUTH_USERS ||--o{ ANSWER_NOTIFICATIONS : "receives"
+    ANSWERS ||--o{ ANSWER_TAGS : "tagged"
 ```
 
 Notes on the diagram:
-- `USERS` refers to Supabase-authenticated users (`auth.users`), which is normally managed by Supabase and referenced via foreign keys in application tables.
-- `VOTES` is modeled as a simple polymorphic target (type + id). Some schemas normalize votes into separate tables for posts/comments/answers — choose the approach that matches your migration files.
+- `AUTH_USERS` represents `auth.users` (managed by Supabase). Business tables reference either `PROFILES.id` (social/chat/files/legacy Q&A) or `AUTH_USERS.id` (new Q&A schema).
+- Two Q&A schemas appear: an early `QUESTIONANSWERS/QANOTIFICATIONS` and a newer normalized set (`QUESTIONS`, `ANSWERS`, `AI_ANSWERS`, votes/tags/comments/notifications). Prefer the newer schema in production.
 
 ---
 
