@@ -1,0 +1,2 @@
+Hello from Cypress test file
+This fixture is used by the resources upload E2E test.
