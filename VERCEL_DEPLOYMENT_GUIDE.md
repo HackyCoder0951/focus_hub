@@ -122,8 +122,8 @@ Create a `.env` file in your project root (add to `.gitignore`):
 
 ```env
 # Supabase Configuration
-VITE_SUPABASE_URL=https://hfiltwodcwlqwxrwfjyp.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhmaWx0d29kY3dscXd4cndmanlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMDM1NjUsImV4cCI6MjA2Njc3OTU2NX0.hZtaDcr5z_l0YlsMj47zO4I6zW1lEmt9QM8ZJAJMouI
+VITE_SUPABASE_URL=your_api_key_here
+VITE_SUPABASE_ANON_KEY=your_api_key_here
 
 # GROQ AI Configuration (if using)
 VITE_GROQ_API_KEY=your_groq_api_key_here
@@ -140,8 +140,8 @@ Modify `src/integrations/supabase/client.ts`:
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://hfiltwodcwlqwxrwfjyp.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 ```
@@ -192,7 +192,7 @@ Ensure `.env` files are ignored:
 
    | Name | Value |
    |------|-------|
-   | `VITE_SUPABASE_URL` | `https://hfiltwodcwlqwxrwfjyp.supabase.co` |
+   | `VITE_SUPABASE_URL` | `projectlink.com` |
    | `VITE_SUPABASE_ANON_KEY` | `your_supabase_anon_key` |
    | `VITE_GROQ_API_KEY` | `your_groq_api_key` |
 
@@ -326,7 +326,7 @@ After deployment, check:
 #### Update Supabase Allowed Origins:
 
 1. Go to [Supabase Dashboard](https://app.supabase.com)
-2. Select your project: `hfiltwodcwlqwxrwfjyp`
+2. Select your project: `....`
 3. Navigate to: **Settings** → **API** → **API Settings**
 4. Find **Site URL** and add:
    ```
