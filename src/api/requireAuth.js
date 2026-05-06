@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET;
+const SUPABASE_JWT_SECRET = process.env.VITE_SUPABASE_JWT_SECRET;
 
 export function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
