@@ -1,229 +1,274 @@
-import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useState, type ComponentProps } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Edit, MapPin, Calendar, Link as LinkIcon } from "lucide-react";
+import {
+  Calendar,
+  FileText,
+  FolderOpen,
+  Link as LinkIcon,
+  MapPin,
+  Pencil,
+  UserX,
+} from "lucide-react";
 import PostCard from "@/components/PostCard";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import FileCard from "@/components/FileCard";
 import ProfileFollowButton from "@/components/ProfileFollowButton";
 import FollowersStats from "@/components/FollowersStats";
-// import ProfileEditForm from "@/components/ProfileEditForm";
-import FileCard from "@/components/FileCard";
+import { EmptyState } from "@/components/EmptyState";
+import { PostCardSkeleton, ProfileHeaderSkeleton, ResourceCardSkeleton } from "@/components/skeletons";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  useProfile,
+  useProfileActivity,
+  useProfileRole,
+  useQaStats,
+  useUserFiles,
+  useUserPosts,
+} from "@/features/profile/hooks/useProfile";
+import { ActivityTimeline } from "@/features/profile/components/ActivityTimeline";
+import { QaStatsCard } from "@/features/profile/components/QaStatsCard";
+
+type PostCardPost = ComponentProps<typeof PostCard>["post"];
+
+const TAB_TRIGGER_CLASS =
+  "rounded-none border-b-2 border-transparent px-1 pb-3 pt-2 font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none";
+
+function AboutCard({ bio, website, location }: { bio?: string | null; website?: string | null; location?: string | null }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>About</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <h4 className="mb-2 font-semibold">Bio</h4>
+          <p className="text-sm text-muted-foreground">{bio || "No bio yet."}</p>
+        </div>
+        <div>
+          <h4 className="mb-2 font-semibold">Website</h4>
+          <p className="text-sm text-muted-foreground">{website || "—"}</p>
+        </div>
+        <div>
+          <h4 className="mb-2 font-semibold">Location</h4>
+          <p className="text-sm text-muted-foreground">{location || "—"}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 const Profile = () => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
-  const [profileData, setProfileData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [userPosts, setUserPosts] = useState<any[]>([]);
-  const [userFiles, setUserFiles] = useState<any[]>([]);
-  const [profileRole, setProfileRole] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("posts");
 
-  // Get user_id from query string if present
-  const searchParams = new URLSearchParams(location.search);
-  const queryUserId = searchParams.get("user_id");
+  // Keep the ?user_id= query-param behavior for viewing other profiles.
+  const queryUserId = new URLSearchParams(location.search).get("user_id");
   const profileUserId = queryUserId || user?.id;
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!profileUserId) return;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', profileUserId)
-        .single();
-      if (!error) setProfileData(data);
-      setLoading(false);
-    };
-    const fetchProfileRole = async () => {
-      if (!profileUserId) return;
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', profileUserId)
-        .single();
-      if (!error) setProfileRole(data?.role || null);
-    };
-    fetchProfile();
-    fetchProfileRole();
-  }, [profileUserId]);
+  const { data: profileData, isLoading } = useProfile(profileUserId);
+  const { data: profileRole } = useProfileRole(profileUserId);
+  const postsQuery = useUserPosts(profileUserId);
+  const filesQuery = useUserFiles(profileUserId);
+  const activityQuery = useProfileActivity(profileUserId);
+  const qaStatsQuery = useQaStats(profileUserId);
 
-  useEffect(() => {
-    const fetchUserPosts = async () => {
-      if (!profileData) return;
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profiles: profiles (
-            full_name,
-            avatar_url,
-            email
-          )
-        `)
-        .eq('user_id', profileData.id)
-        .order('created_at', { ascending: false });
-      if (!error) setUserPosts(data || []);
-    };
-    fetchUserPosts();
-  }, [profileData]);
+  const isAdmin = profileRole === "admin";
+  const isOwnProfile = !!user && user.id === profileUserId;
 
-  useEffect(() => {
-    const fetchUserFiles = async () => {
-      if (!profileData) return;
-      const { data, error } = await supabase
-        .from('filemodels')
-        .select('*')
-        .eq('user_id', profileData.id)
-        .order('created_at', { ascending: false });
-      if (!error) setUserFiles(data || []);
-    };
-    fetchUserFiles();
-  }, [profileData]);
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-4xl space-y-6">
+        <ProfileHeaderSkeleton />
+        <PostCardSkeleton />
+      </div>
+    );
+  }
 
-  if (loading) return <div className="text-center py-10">Loading...</div>;
-  if (!profileData) return <div className="text-center py-10">Profile not found.</div>;
+  if (!profileData) {
+    return (
+      <div className="mx-auto max-w-4xl">
+        <EmptyState
+          icon={UserX}
+          title="Profile not found"
+          description="This profile doesn't exist or is no longer available."
+        />
+      </div>
+    );
+  }
+
+  const memberType = profileData.member_type;
+  const posts = postsQuery.data ?? [];
+  const files = filesQuery.data ?? [];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Profile Header */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-6">
-            <Avatar className="h-32 w-32">
-              <AvatarImage src={profileData.avatar_url || undefined} />
-              <AvatarFallback className="text-2xl">
-                {profileData.full_name ? profileData.full_name[0] : 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold">{profileData.full_name}</h1>
-                  <p className="text-muted-foreground">{profileData.email}</p>
-                  <div className="flex gap-2 mt-1">
-                    {profileRole === 'admin' && (
-                      <Badge variant="destructive">Admin</Badge>
-                    )}
-                    {profileData.member_type && (
-                      <Badge variant="secondary">
-                        {profileData.member_type === 'student' ? 'Student' : profileData.member_type === 'alumni' ? 'Alumni' : ''}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex gap-4 mt-2">
-                    {profileRole !== 'admin' && <FollowersStats profileUserId={profileData.id} />}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  {user && user.id === profileData.id ? null : (
-                    <ProfileFollowButton profileUserId={profileData.id} />
+    <div className="mx-auto max-w-4xl space-y-6 animate-fade-in">
+      {/* Banner header */}
+      <Card className="overflow-hidden rounded-xl">
+        <div className="h-32 bg-gradient-to-r from-primary/25 via-accent to-primary/10" />
+        <CardContent className="p-6 pt-0">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <Avatar className="-mt-12 h-24 w-24 ring-4 ring-background">
+                <AvatarImage src={profileData.avatar_url ?? undefined} />
+                <AvatarFallback className="text-2xl">
+                  {profileData.full_name ? profileData.full_name[0] : "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="pb-1">
+                <h1 className="text-2xl font-bold">{profileData.full_name}</h1>
+                <p className="text-sm text-muted-foreground">{profileData.email}</p>
+                <div className="mt-1 flex gap-2">
+                  {isAdmin && <Badge variant="destructive">Admin</Badge>}
+                  {memberType && (
+                    <Badge variant="secondary">
+                      {memberType === "student" ? "Student" : memberType === "alumni" ? "Alumni" : memberType}
+                    </Badge>
                   )}
                 </div>
               </div>
-              <p className="text-sm">{profileData.bio}</p>
-              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                {profileData.location && (
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                    {profileData.location}
-                </div>
-                )}
-                {profileData.website && (
-                <div className="flex items-center gap-1">
-                  <LinkIcon className="h-4 w-4" />
-                    <a href={profileData.website} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{profileData.website}</a>
-                </div>
-                )}
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  Joined {profileData.created_at ? new Date(profileData.created_at).toLocaleDateString() : ''}
-                </div>
+            </div>
+            <div className="flex gap-2 pb-1">
+              {isOwnProfile ? (
+                <Button variant="outline" onClick={() => navigate("/app/settings")}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit Profile
+                </Button>
+              ) : (
+                <ProfileFollowButton profileUserId={profileData.id} />
+              )}
+            </div>
+          </div>
+
+          {profileData.bio && <p className="mt-4 text-sm">{profileData.bio}</p>}
+          <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
+            {profileData.location && (
+              <div className="flex items-center gap-1">
+                <MapPin className="h-4 w-4" />
+                {profileData.location}
               </div>
-              {/* Stats could be fetched and shown here */}
+            )}
+            {profileData.website && (
+              <div className="flex items-center gap-1">
+                <LinkIcon className="h-4 w-4" />
+                <a
+                  href={profileData.website}
+                  className="text-primary hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {profileData.website}
+                </a>
+              </div>
+            )}
+            <div className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              Joined {profileData.created_at ? new Date(profileData.created_at).toLocaleDateString() : ""}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Profile Content */}
-      {profileRole === 'admin' ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>About</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h4 className="font-semibold mb-2">Bio</h4>
-              <p className="text-sm text-muted-foreground">{profileData.bio}</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Website</h4>
-              <p className="text-sm text-muted-foreground">{profileData.website}</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Location</h4>
-              <p className="text-sm text-muted-foreground">{profileData.location}</p>
-            </div>
-          </CardContent>
-        </Card>
+      {isAdmin ? (
+        <AboutCard bio={profileData.bio} website={profileData.website} location={profileData.location} />
       ) : (
-        <Tabs defaultValue="posts" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="posts">Posts</TabsTrigger>
-            <TabsTrigger value="files">Files</TabsTrigger>
-            <TabsTrigger value="about">About</TabsTrigger>
-          </TabsList>
-          <TabsContent value="posts" className="space-y-6">
-            {userPosts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-            <div className="text-muted-foreground">User posts will appear here.</div>
-          </TabsContent>
-          <TabsContent value="files">
-            <Card>
-              <CardHeader>
-                <CardTitle>Uploaded Files</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {userFiles.length === 0 ? (
-                  <div className="text-muted-foreground">User files will appear here.</div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {userFiles.map(file => (
-                      <FileCard key={file.id} file={file} />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="about">
-            <Card>
-              <CardHeader>
-                <CardTitle>About</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Bio</h4>
-                  <p className="text-sm text-muted-foreground">{profileData.bio}</p>
+        <>
+          {/* Stat pills + Q&A stats */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-1">
+              <button
+                type="button"
+                className="rounded-lg px-4 py-2 text-center transition-colors hover:bg-accent"
+                onClick={() => setActiveTab("posts")}
+              >
+                <div className="font-semibold">{posts.length}</div>
+                <div className="text-xs text-muted-foreground">Posts</div>
+              </button>
+              <FollowersStats profileUserId={profileData.id} />
+            </div>
+            <QaStatsCard stats={qaStatsQuery.data} isLoading={qaStatsQuery.isLoading} />
+          </div>
+
+          {/* Content tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="h-auto w-full justify-start gap-6 rounded-none border-b bg-transparent p-0">
+              <TabsTrigger value="posts" className={TAB_TRIGGER_CLASS}>
+                Posts
+              </TabsTrigger>
+              <TabsTrigger value="files" className={TAB_TRIGGER_CLASS}>
+                Files
+              </TabsTrigger>
+              <TabsTrigger value="activity" className={TAB_TRIGGER_CLASS}>
+                Activity
+              </TabsTrigger>
+              <TabsTrigger value="about" className={TAB_TRIGGER_CLASS}>
+                About
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="posts" className="space-y-6">
+              {postsQuery.isLoading ? (
+                <>
+                  <PostCardSkeleton />
+                  <PostCardSkeleton />
+                </>
+              ) : posts.length === 0 ? (
+                <Card>
+                  <CardContent>
+                    <EmptyState
+                      icon={FileText}
+                      title="No posts yet"
+                      description="Posts shared by this user will appear here."
+                    />
+                  </CardContent>
+                </Card>
+              ) : (
+                posts.map((post) => (
+                  <PostCard key={post.id} post={post as unknown as PostCardPost} />
+                ))
+              )}
+            </TabsContent>
+
+            <TabsContent value="files">
+              {filesQuery.isLoading ? (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <ResourceCardSkeleton key={i} />
+                  ))}
                 </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Website</h4>
-                  <p className="text-sm text-muted-foreground">{profileData.website}</p>
+              ) : files.length === 0 ? (
+                <Card>
+                  <CardContent>
+                    <EmptyState
+                      icon={FolderOpen}
+                      title="No files yet"
+                      description="Files uploaded by this user will appear here."
+                    />
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {files.map((file) => (
+                    <FileCard key={file.id} file={file} />
+                  ))}
                 </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Location</h4>
-                  <p className="text-sm text-muted-foreground">{profileData.location}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              )}
+            </TabsContent>
+
+            <TabsContent value="activity">
+              <ActivityTimeline items={activityQuery.data} isLoading={activityQuery.isLoading} />
+            </TabsContent>
+
+            <TabsContent value="about">
+              <AboutCard bio={profileData.bio} website={profileData.website} location={profileData.location} />
+            </TabsContent>
+          </Tabs>
+        </>
       )}
     </div>
   );

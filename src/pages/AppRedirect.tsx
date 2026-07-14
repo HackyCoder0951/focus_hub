@@ -8,9 +8,8 @@ const AppRedirect = () => {
 
   useEffect(() => {
     if (loading || userRole === null) return;
-    // console.log('AppRedirect:', { isAdmin, loading, userRole });
     if (isAdmin) {
-      navigate("/app/AdminDashboard", { replace: true });
+      navigate("/app/admin/dashboard", { replace: true });
     } else {
       navigate("/app/feed", { replace: true }); // Change to /app/feed if that's your feed route
     }

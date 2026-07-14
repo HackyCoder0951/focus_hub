@@ -1,500 +1,131 @@
-import { useState, useRef, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// import { Badge } from "@/components/ui/badge";
-import { Bell, Shield, User, Palette, Globe, Eye, EyeOff } from "lucide-react";
-import { useTheme } from "@/components/theme-provider";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import {
+  Bell,
+  Eye,
+  Palette,
+  Shield,
+  User,
+  UserCog,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { ProfileSettings } from "@/features/settings/components/ProfileSettings";
+import { SecuritySettings } from "@/features/settings/components/SecuritySettings";
+import { NotificationSettings } from "@/features/settings/components/NotificationSettings";
+import { PrivacySettings } from "@/features/settings/components/PrivacySettings";
+import { AppearanceSettings } from "@/features/settings/components/AppearanceSettings";
+import { AccountSettings } from "@/features/settings/components/AccountSettings";
+
+type SectionId =
+  | "profile"
+  | "security"
+  | "notifications"
+  | "privacy"
+  | "appearance"
+  | "account";
+
+interface Section {
+  id: SectionId;
+  label: string;
+  icon: LucideIcon;
+  /** Notifications/privacy are hidden for admins (preserved behavior). */
+  adminHidden?: boolean;
+}
+
+const SECTIONS: Section[] = [
+  { id: "profile", label: "Profile", icon: User },
+  { id: "security", label: "Security", icon: Shield },
+  { id: "notifications", label: "Notifications", icon: Bell, adminHidden: true },
+  { id: "privacy", label: "Privacy", icon: Eye, adminHidden: true },
+  { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "account", label: "Account", icon: UserCog },
+];
+
+const SECTION_CONTENT: Record<SectionId, () => JSX.Element> = {
+  profile: ProfileSettings,
+  security: SecuritySettings,
+  notifications: NotificationSettings,
+  privacy: PrivacySettings,
+  appearance: AppearanceSettings,
+  account: AccountSettings,
+};
 
 const Settings = () => {
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const { theme, setTheme } = useTheme();
-  const { user, profile, isAdmin } = useAuth();
-  const { toast } = useToast();
-  const [avatarUploading, setAvatarUploading] = useState(false);
-  const fileInputRef = useRef(null);
+  const { isAdmin } = useAuth();
+  const [active, setActive] = useState<SectionId>("profile");
 
-  const [profileData, setProfileData] = useState({
-    name: "",
-    email: "",
-    bio: "",
-    website: "",
-    location: ""
-  });
-
-  // When profile loads, update the form fields
-  useEffect(() => {
-    if (profile) {
-      setProfileData({
-        name: profile.full_name || "",
-        email: profile.email || user?.email || "",
-        bio: profile.bio || "",
-        website: profile.website || "",
-        location: profile.location || ""
-      });
-    }
-  }, [profile, user]);
-
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: true,
-    mentions: true,
-    comments: true,
-    follows: false,
-    messages: true
-  });
-
-  const [privacy, setPrivacy] = useState({
-    profilePublic: true,
-    showEmail: false,
-    showLocation: true,
-    allowMessages: true
-  });
-
-  const handleSaveProfile = async () => {
-    if (!user) return;
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        full_name: profileData.name,
-        email: profileData.email,
-        bio: profileData.bio,
-        website: profileData.website,
-        location: profileData.location,
-        settings: {
-          notifications,
-          privacy
-        }
-      })
-      .eq('id', user.id);
-    if (error) {
-      toast({ title: 'Profile update failed', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Profile updated', description: 'Your profile has been updated.' });
-    }
-  };
-
-  const handleAvatarChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    setAvatarUploading(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true });
-      if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: urlData.publicUrl })
-        .eq('id', user.id);
-      if (updateError) throw updateError;
-      toast({ title: "Avatar updated!" });
-      // Optionally update local profile state here
-    } catch (err) {
-      toast({ title: "Avatar upload failed", description: err.message, variant: "destructive" });
-    } finally {
-      setAvatarUploading(false);
-    }
-  };
-
-  const handleRemoveAvatar = async () => {
-    if (!user) return;
-    const { error } = await supabase
-      .from('profiles')
-      .update({ avatar_url: null })
-      .eq('id', user.id);
-    if (error) {
-      toast({ title: "Failed to remove avatar", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Avatar removed" });
-      // Optionally update local profile state here
-    }
-  };
+  const sections = SECTIONS.filter(
+    (section) => !(isAdmin && section.adminHidden)
+  );
+  const activeSection =
+    sections.find((section) => section.id === active) ?? sections[0];
+  const ActiveContent = SECTION_CONTENT[activeSection.id];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 animate-fade-in">
       <div>
         <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage your account settings and preferences</p>
+        <p className="text-muted-foreground">
+          Manage your account settings and preferences
+        </p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-3' : 'grid-cols-5'}`}>
-          <TabsTrigger value="profile" className="flex items-center gap-2 justify-center w-full">
-            <User className="h-4 w-4" />
-            Profile
-          </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2 justify-center w-full">
-            <Shield className="h-4 w-4" />
-            Security
-          </TabsTrigger>
-          {!isAdmin && (
-            <TabsTrigger value="notifications" className="flex items-center gap-2 justify-center w-full">
-              <Bell className="h-4 w-4" />
-              Notifications
-            </TabsTrigger>
-          )}
-          {!isAdmin && (
-            <TabsTrigger value="privacy" className="flex items-center gap-2 justify-center w-full">
-              <Eye className="h-4 w-4" />
-              Privacy
-            </TabsTrigger>
-          )}
-          <TabsTrigger value="appearance" className="flex items-center gap-2 justify-center w-full">
-            <Palette className="h-4 w-4" />
-            Appearance
-          </TabsTrigger>
-        </TabsList>
+      {/* Mobile: section picker */}
+      <div className="md:hidden">
+        <Select
+          value={activeSection.id}
+          onValueChange={(value) => setActive(value as SectionId)}
+        >
+          <SelectTrigger aria-label="Settings section">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {sections.map(({ id, label }) => (
+              <SelectItem key={id} value={id}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-        {/* Profile Settings */}
-        <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
-              <CardDescription>Update your profile details and public information</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center gap-6">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={profile?.avatar_url || undefined} />
-                  <AvatarFallback className="text-lg">{profile?.full_name ? profile.full_name[0] : 'U'}</AvatarFallback>
-                </Avatar>
-                <div className="space-y-2">
-                  <h3 className="font-semibold">Profile Picture</h3>
-                  <div className="flex gap-2 items-center">
-                    <Button variant="outline" size="sm" asChild disabled={avatarUploading}>
-                      <label>
-                        {avatarUploading ? "Uploading..." : "Change Avatar"}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleAvatarChange}
-                          style={{ display: "none" }}
-                          ref={fileInputRef}
-                        />
-                      </label>
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={handleRemoveAvatar} disabled={avatarUploading}>Remove</Button>
-                  </div>
-                </div>
-              </div>
+      <div className="flex flex-col gap-8 md:flex-row">
+        {/* Desktop: vertical section nav */}
+        <nav className="hidden w-48 shrink-0 md:block" aria-label="Settings sections">
+          <ul className="space-y-1">
+            {sections.map(({ id, label, icon: Icon }) => (
+              <li key={id}>
+                <button
+                  type="button"
+                  onClick={() => setActive(id)}
+                  aria-current={activeSection.id === id ? "page" : undefined}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    activeSection.id === id
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={profileData.name}
-                    onChange={(e) => setProfileData({...profileData, name: e.target.value})}
-                    placeholder="Enter your full name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profileData.email}
-                    onChange={(e) => setProfileData({...profileData, email: e.target.value})}
-                    placeholder="Enter your email"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={profileData.bio}
-                  onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
-                  rows={3}
-                  placeholder="Enter your bio"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    value={profileData.website}
-                    onChange={(e) => setProfileData({...profileData, website: e.target.value})}
-                    placeholder="Enter your website"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
-                  <Input
-                    id="location"
-                    value={profileData.location}
-                    onChange={(e) => setProfileData({...profileData, location: e.target.value})}
-                    placeholder="Enter your location"
-                  />
-                </div>
-              </div>
-
-              <Button onClick={handleSaveProfile}>Save Changes</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Security Settings */}
-        <TabsContent value="security">
-          <Card>
-            <CardHeader>
-              <CardTitle>Password & Security</CardTitle>
-              <CardDescription>Change your account password</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <form
-                className="space-y-4 max-w-md"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  const form = e.target as HTMLFormElement;
-                  const currentPassword = (form.elements.namedItem('currentPassword') as HTMLInputElement).value;
-                  const newPassword = (form.elements.namedItem('newPassword') as HTMLInputElement).value;
-                  const confirmPassword = (form.elements.namedItem('confirmPassword') as HTMLInputElement).value;
-                  if (newPassword !== confirmPassword) {
-                    toast({ title: 'Passwords do not match', variant: 'destructive' });
-                    return;
-                  }
-                  const { error } = await supabase.auth.updateUser({ password: newPassword });
-                  if (error) {
-                    toast({ title: 'Password update failed', description: error.message, variant: 'destructive' });
-                  } else {
-                    toast({ title: 'Password updated', description: 'Your password has been changed.' });
-                    window.location.reload();
-                  }
-                }}
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Current Password</Label>
-                  <Input id="currentPassword" name="currentPassword" type="password" required autoComplete="current-password" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
-                  <Input id="newPassword" name="newPassword" type="password" required autoComplete="new-password" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                  <Input id="confirmPassword" name="confirmPassword" type="password" required autoComplete="new-password" />
-                </div>
-                <Button type="submit" className="w-full">Change Password</Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Two-Factor Authentication</CardTitle>
-              <CardDescription>Add an extra layer of security to your account</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Enable 2FA</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Secure your account with two-factor authentication
-                  </p>
-                </div>
-                <Switch />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Notifications Settings */}
-        {!isAdmin && (
-          <TabsContent value="notifications">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
-                <CardDescription>Choose what notifications you want to receive</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Email Notifications</h4>
-                      <p className="text-sm text-muted-foreground">Receive notifications via email</p>
-                    </div>
-                    <Switch
-                      checked={notifications.email}
-                      onCheckedChange={(checked) => setNotifications({...notifications, email: checked})}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Push Notifications</h4>
-                      <p className="text-sm text-muted-foreground">Receive push notifications in your browser</p>
-                    </div>
-                    <Switch
-                      checked={notifications.push}
-                      onCheckedChange={(checked) => setNotifications({...notifications, push: checked})}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Mentions</h4>
-                      <p className="text-sm text-muted-foreground">When someone mentions you in a post</p>
-                    </div>
-                    <Switch
-                      checked={notifications.mentions}
-                      onCheckedChange={(checked) => setNotifications({...notifications, mentions: checked})}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Comments</h4>
-                      <p className="text-sm text-muted-foreground">When someone comments on your posts</p>
-                    </div>
-                    <Switch
-                      checked={notifications.comments}
-                      onCheckedChange={(checked) => setNotifications({...notifications, comments: checked})}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">New Followers</h4>
-                      <p className="text-sm text-muted-foreground">When someone starts following you</p>
-                    </div>
-                    <Switch
-                      checked={notifications.follows}
-                      onCheckedChange={(checked) => setNotifications({...notifications, follows: checked})}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Messages</h4>
-                      <p className="text-sm text-muted-foreground">When you receive a new message</p>
-                    </div>
-                    <Switch
-                      checked={notifications.messages}
-                      onCheckedChange={(checked) => setNotifications({...notifications, messages: checked})}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
-
-        {/* Privacy Settings */}
-        {!isAdmin && (
-          <TabsContent value="privacy">
-            <Card>
-              <CardHeader>
-                <CardTitle>Privacy Settings</CardTitle>
-                <CardDescription>Control who can see your information and interact with you</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Public Profile</h4>
-                      <p className="text-sm text-muted-foreground">Make your profile visible to everyone</p>
-                    </div>
-                    <Switch
-                      checked={privacy.profilePublic}
-                      onCheckedChange={(checked) => setPrivacy({...privacy, profilePublic: checked})}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Show Email</h4>
-                      <p className="text-sm text-muted-foreground">Display your email address on your profile</p>
-                    </div>
-                    <Switch
-                      checked={privacy.showEmail}
-                      onCheckedChange={(checked) => setPrivacy({...privacy, showEmail: checked})}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Show Location</h4>
-                      <p className="text-sm text-muted-foreground">Display your location on your profile</p>
-                    </div>
-                    <Switch
-                      checked={privacy.showLocation}
-                      onCheckedChange={(checked) => setPrivacy({...privacy, showLocation: checked})}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Allow Messages</h4>
-                      <p className="text-sm text-muted-foreground">Let other users send you messages</p>
-                    </div>
-                    <Switch
-                      checked={privacy.allowMessages}
-                      onCheckedChange={(checked) => setPrivacy({...privacy, allowMessages: checked})}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
-
-        {/* Appearance Settings */}
-        <TabsContent value="appearance">
-          <Card>
-            <CardHeader>
-              <CardTitle>Appearance</CardTitle>
-              <CardDescription>Customize how Focus looks and feels</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-3">Theme</h4>
-                  <div className="grid grid-cols-3 gap-3">
-                    <button
-                      onClick={() => setTheme("light")}
-                      className={`p-4 rounded-lg border text-center space-y-2 transition-colors ${
-                        theme === "light" ? "border-primary bg-primary/5" : "border-border"
-                      }`}
-                    >
-                      <div className="w-full h-8 bg-white border rounded"></div>
-                      <span className="text-sm font-medium">Light</span>
-                    </button>
-                    <button
-                      onClick={() => setTheme("dark")}
-                      className={`p-4 rounded-lg border text-center space-y-2 transition-colors ${
-                        theme === "dark" ? "border-primary bg-primary/5" : "border-border"
-                      }`}
-                    >
-                      <div className="w-full h-8 bg-gray-900 border rounded"></div>
-                      <span className="text-sm font-medium">Dark</span>
-                    </button>
-                    <button
-                      onClick={() => setTheme("system")}
-                      className={`p-4 rounded-lg border text-center space-y-2 transition-colors ${
-                        theme === "system" ? "border-primary bg-primary/5" : "border-border"
-                      }`}
-                    >
-                      <div className="w-full h-8 bg-gradient-to-r from-white to-gray-900 border rounded"></div>
-                      <span className="text-sm font-medium">System</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        <div className="min-w-0 flex-1" key={activeSection.id}>
+          <ActiveContent />
+        </div>
+      </div>
     </div>
   );
 };

@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
-import { supabase } from "@/api/supabaseClient";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { AuthLayout } from "@/components/AuthLayout";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -18,7 +19,7 @@ const ForgotPassword = () => {
     setErrorMsg("");
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`, // Must match the registered route
+      redirectTo: `${window.location.origin}/reset-password`,
     });
     setLoading(false);
     if (!error) {
@@ -30,74 +31,60 @@ const ForgotPassword = () => {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Check your email</CardTitle>
-            <CardDescription className="text-center">
-              We've sent a password reset link to {email}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-sm text-muted-foreground mb-4">
-              Didn't receive the email? Check your spam folder or try again.
-            </p>
-            <div className="space-y-2">
-              <Button onClick={() => setIsSubmitted(false)} variant="outline" className="w-full">
-                Try again
-              </Button>
-              <Link to="/login">
-                <Button variant="ghost" className="w-full">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to login
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <AuthLayout title="Check your email" description={`We've sent a password reset link to ${email}`}>
+        <Alert className="mb-4 border-success/40 text-success [&>svg]:text-success">
+          <CheckCircle2 className="h-4 w-4" />
+          <AlertDescription>Reset link sent successfully.</AlertDescription>
+        </Alert>
+        <p className="mb-4 text-center text-sm text-muted-foreground">
+          Didn't receive the email? Check your spam folder or try again.
+        </p>
+        <div className="space-y-2">
+          <Button onClick={() => setIsSubmitted(false)} variant="outline" className="w-full">
+            Try again
+          </Button>
+          <Button asChild variant="ghost" className="w-full">
+            <Link to="/login">
+              <ArrowLeft className="h-4 w-4" />
+              Back to login
+            </Link>
+          </Button>
+        </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Reset password</CardTitle>
-          <CardDescription className="text-center">
-            Enter your email and we'll send you a reset link
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="john@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-              />
-            </div>
-            {errorMsg && (
-              <div className="text-red-500 text-sm text-center">{errorMsg}</div>
-            )}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Sending..." : "Send reset link"}
-            </Button>
-          </form>
-          <div className="mt-6 text-center">
-            <Link to="/login" className="text-sm text-primary hover:underline flex items-center justify-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to login
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthLayout
+      title="Reset password"
+      description="Enter your email and we'll send you a reset link"
+      footer={
+        <Link to="/login" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
+          <ArrowLeft className="h-4 w-4" />
+          Back to login
+        </Link>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="john@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={loading}
+          />
+        </div>
+        {errorMsg && <p className="text-center text-sm text-destructive">{errorMsg}</p>}
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          {loading ? "Sending…" : "Send reset link"}
+        </Button>
+      </form>
+    </AuthLayout>
   );
 };
 

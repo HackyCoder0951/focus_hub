@@ -17,7 +17,7 @@ const BackgroundAtom: React.FC = () => (
         rx="80"
         ry="30"
         fill="none"
-        stroke="#000000"
+        stroke="hsl(var(--primary) / 0.25)"
         strokeWidth="4"
       />
       <ellipse
@@ -27,7 +27,7 @@ const BackgroundAtom: React.FC = () => (
         rx="80"
         ry="30"
         fill="none"
-        stroke="#000000"
+        stroke="hsl(var(--primary) / 0.25)"
         strokeWidth="4"
       />
       <ellipse
@@ -37,7 +37,7 @@ const BackgroundAtom: React.FC = () => (
         rx="80"
         ry="30"
         fill="none"
-        stroke="#000000"
+        stroke="hsl(var(--primary) / 0.25)"
         strokeWidth="4"
       />
       {/* <text
@@ -46,7 +46,7 @@ const BackgroundAtom: React.FC = () => (
         textAnchor="middle"
         fontSize="28"
         fontWeight="bold"
-        fill="#299ecf"
+        fill="hsl(var(--primary))"
         fontFamily="sans-serif"
         opacity="0.2"
       >
