@@ -2,7 +2,7 @@
 
 **Project Title:** Focus Hub  
 **Reporting Period:** 19 May 2026 to 2 June 2026  
-**Prepared By:** [Your Name]
+**Prepared By:** Jignesh Ameta (Junior Software Engineer)
 
 ## Overview
 
@@ -31,6 +31,66 @@ Attention was given to layout, visual hierarchy, consistency, and usability. The
 The core modules of the project were developed during this period. These modules form the basis of the application and are essential for the main workflow of the system.
 
 This development work has helped establish the initial working version of the project and created a stronger base for upcoming features. The completed modules are expected to support further integration and testing in the next phase of development.
+
+## Module List and Technical Details
+
+The following core modules were defined and advanced during this fortnight:
+
+| Module | Main Features | Technical Details |
+| --- | --- | --- |
+| Project Architecture Module | Layered structure, feature boundaries, scalability planning | Defines how front-end, data, and business logic are separated for maintainability. |
+| System Design Module | Data flow, module interactions, application structure | Establishes the technical blueprint for integrating all major application parts. |
+| UI/UX Design Module | Layout planning, user flow, interface consistency | Guides the component structure and visual hierarchy for a user-friendly interface. |
+| Core Application Module | Base application workflow, initial functionality, shared logic | Provides the foundation for the main screens, routes, and reusable application behavior. |
+| Shared Component Setup | Buttons, forms, containers, reusable layout blocks | Supports clean implementation and reduces duplication in the front-end layer. |
+
+## Agile Workflow Visuals
+
+### Architecture-to-Implementation Flow
+
+```mermaid
+flowchart LR
+	A[Project Requirements] --> B[Architecture Research]
+	B --> C[System Design]
+	C --> D[UI/UX Planning]
+	D --> E[Core Module Development]
+	E --> F[Foundation Ready for Next Iteration]
+```
+
+### Example Design Review Flow
+
+```mermaid
+sequenceDiagram
+	actor Supervisor
+	participant Developer as Jignesh Ameta (Developer)
+	participant Design as Architecture/UI Review
+	participant Build as Core Modules
+
+	Supervisor->>Developer: Share milestone expectations
+	Developer->>Design: Present architecture and UI flow
+	Design-->>Developer: Review feedback and corrections
+	Developer->>Build: Implement approved module structure
+	Build-->>Supervisor: Show first working foundation
+```
+
+### Agile Progress Gantt Chart
+
+```mermaid
+gantt
+	title Agile Progress for First Fortnight
+	dateFormat  YYYY-MM-DD
+	axisFormat  %d %b
+
+	section Planning
+	Requirements review and scope setup     :done,    p1, 2026-05-19, 3d
+	section Design
+	Architecture and system design          :done,    d1, 2026-05-22, 4d
+	UI/UX planning and wireframe direction   :done,    d2, 2026-05-26, 3d
+	section Implementation
+	Core module development                 :done,    d3, 2026-05-29, 4d
+	section Review
+	Progress validation and next-step prep  :active,  v1, 2026-06-02, 1d
+```
 
 ## Progress Summary
 
