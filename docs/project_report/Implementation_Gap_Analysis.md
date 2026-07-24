@@ -157,7 +157,33 @@ The following commands were executed to verify the current state of the project:
 | `npm run build` | Failed | Production build failed because `@fontsource-variable/inter` could not be resolved. |
 | `npm ls @fontsource-variable/inter @fontsource-variable/jetbrains-mono` | Packages not installed in current `node_modules` | Build failure is linked to missing installed font dependencies. |
 
-## 9. Priority Action Plan
+## 9. Testing Plan Reference and Gap
+
+The testing gap should be evaluated against the existing project testing documents:
+
+- `docs/Software_Testing_Documentation.md`
+- `docs/Software_Testing_FullStack_Plan.md`
+
+These documents define the expected quality approach for Focus Hub. The documented testing scope includes manual testing, automated testing, regression testing, smoke testing, functional testing, integration testing, UI/UX testing, security testing, performance testing, and end-to-end testing.
+
+The detailed testing documentation also defines module-level test cases for:
+
+- Authentication
+- Social feed
+- Chat system
+- Q&A module
+- Resource sharing
+- Admin dashboard
+- Profile and settings
+- AI integration
+
+The full-stack testing plan further expands the expected coverage across frontend, backend/API, database, integrations, and end-to-end user journeys. It recommends coverage for component tests, API tests, contract validation, migration testing, RLS testing, Supabase realtime behavior, AI answer flow testing, and CI/CD test reporting.
+
+Compared with these testing references, the current repository has only partial evidence of execution. Cypress E2E specs exist for selected flows, and the testing documentation records some passed and failed Cypress outcomes. However, the implementation still lacks visible unit tests, integration tests, API contract tests, migration/RLS test evidence, performance test scripts, and a complete CI testing pipeline.
+
+Therefore, the fourth fortnightly report's testing claims should be treated as **partially supported** rather than fully proven. The correct implementation target should be to convert the existing testing documents into executable test coverage and CI evidence.
+
+## 10. Priority Action Plan
 
 ### Priority 1: Restore Build Readiness
 
@@ -165,23 +191,27 @@ The following commands were executed to verify the current state of the project:
 - Confirm `@fontsource-variable/inter` and `@fontsource-variable/jetbrains-mono` are installed correctly.
 - Re-run `npm run build` until the production build passes.
 
-### Priority 2: Add Formal Test Scripts
+### Priority 2: Implement the Documented Testing Plan
 
-- Add a standard `npm test` script.
-- Add unit tests for core logic such as authentication helpers, feed actions, Q&A tag normalization, file utilities, and chat utility logic.
-- Add integration tests for AI answer API behavior and Supabase-backed feature flows where practical.
+- Use `docs/Software_Testing_Documentation.md` as the source for module-level test cases and status tracking.
+- Use `docs/Software_Testing_FullStack_Plan.md` as the source for required test layers: frontend, backend/API, database, integrations, and E2E.
+- Add a standard `npm test` script that runs the selected unit/integration test framework.
+- Add unit tests for core logic such as feed actions, Q&A tag normalization, file utilities, chat utility logic, and API helpers.
+- Add integration tests for AI answer API behavior, Supabase-backed flows, migration/RLS expectations, and realtime interactions where practical.
+- Map automated tests back to documented IDs such as `AUTH-LOGIN-01`, `FEED-POST-01`, `QA-POST-01`, `RES-UPLOAD-01`, and `AI-ANSWER-01`.
 
 ### Priority 3: Strengthen CI/CD
 
-- Update GitHub Actions to run dependency install, lint, typecheck, unit tests, production build, and Cypress smoke tests.
+- Update GitHub Actions to run dependency install, lint, typecheck, unit tests, integration tests, production build, and Cypress smoke tests.
 - Add a separate staging smoke workflow if deployment credentials are available.
+- Archive Cypress screenshots/videos and test reports on failure.
 - Add dependency audit checks before release.
 
 ### Priority 4: Add Performance and Realtime Validation
 
-- Add `k6` or `Artillery` scripts for feed loading, chat messaging, and Q&A interaction flows.
+- Add `k6` or `Artillery` scripts for feed loading, chat messaging, and Q&A interaction flows as recommended by the testing documentation.
 - Define basic latency and error-rate thresholds.
-- Document results in the project report or testing documentation.
+- Document results in `docs/Software_Testing_Documentation.md` or a linked execution summary.
 
 ### Priority 5: Add Operational Readiness Artifacts
 
@@ -190,7 +220,7 @@ The following commands were executed to verify the current state of the project:
 - Add `CHANGELOG.md` or release notes for the release candidate.
 - Add monitoring setup documentation and, if possible, actual Sentry or Logflare integration.
 
-## 10. Final Conclusion
+## 11. Final Conclusion
 
 The Focus Hub project has a strong functional implementation base. The first three fortnightly reports are mostly supported by the current codebase because the major modules are present and integrated into the application.
 
