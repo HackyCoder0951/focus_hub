@@ -17,8 +17,8 @@ function createQueryBuilder(result) {
   for (const method of chainMethods) {
     builder[method] = vi.fn(() => builder);
   }
-  builder.single = vi.fn(() => Promise.resolve(result));
-  builder.maybeSingle = vi.fn(() => Promise.resolve(result));
+  builder.single = vi.fn(() => builder);
+  builder.maybeSingle = vi.fn(() => builder);
   builder.then = (onFulfilled, onRejected) => Promise.resolve(result).then(onFulfilled, onRejected);
   return builder;
 }

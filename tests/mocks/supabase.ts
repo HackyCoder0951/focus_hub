@@ -36,8 +36,11 @@ function createQueryBuilder(result: any) {
   for (const method of chainMethods) {
     builder[method] = vi.fn(() => builder);
   }
-  builder.single = vi.fn(() => Promise.resolve(result));
-  builder.maybeSingle = vi.fn(() => Promise.resolve(result));
+  // Real supabase-js keeps the builder chainable (e.g. `.returns<T>()`) even
+  // after `.single()`/`.maybeSingle()`, so these return the builder itself
+  // (still thenable) rather than a bare Promise.
+  builder.single = vi.fn(() => builder);
+  builder.maybeSingle = vi.fn(() => builder);
   builder.then = (onFulfilled?: any, onRejected?: any) =>
     Promise.resolve(result).then(onFulfilled, onRejected);
   builder.catch = (onRejected?: any) => Promise.resolve(result).catch(onRejected);
