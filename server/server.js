@@ -17,9 +17,4 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`API server running on http://localhost:${PORT}`);
-});
-
 export default app;
