@@ -159,15 +159,7 @@ const Index = () => {
 
       <footer className="relative z-10 border-t border-border/60">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-6 text-sm text-muted-foreground sm:flex-row">
-          <span>© {new Date().getFullYear()} Focus Hub</span>
-          <div className="flex gap-6">
-            <Link to="/login" className="transition-colors hover:text-foreground">
-              Login
-            </Link>
-            <Link to="/register" className="transition-colors hover:text-foreground">
-              Register
-            </Link>
-          </div>
+          <span>© {new Date().getFullYear()} Focus Hub</span>        
         </div>
       </footer>
     </div>

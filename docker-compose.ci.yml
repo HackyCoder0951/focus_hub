@@ -1,0 +1,24 @@
+services:
+  # Service for the React application, served by Nginx
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: focus-hub-app
+    ports:
+      - "8080:80"
+
+  # Service for running Cypress tests
+  cypress:
+    # Use the official Cypress image
+    image: cypress/included:13.13.1
+    container_name: focus-hub-cypress
+    depends_on:
+      - app
+    # Mount the local cypress directory into the container
+    volumes:
+      - ./cypress:/e2e/cypress
+      - ./cypress.config.cjs:/e2e/cypress.config.cjs
+      - ./node_modules:/e2e/node_modules
+    # Add the default command to run when this service is started.
+    command: ["cypress", "run", "--project", "/e2e", "--browser", "chrome", "--headless", "--config", "baseUrl=http://app:80"]

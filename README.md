@@ -119,7 +119,57 @@
 
 ---
 
-## 4. Project Structure
+## 4. Testing
+
+### 4.1 Unit Tests (Vitest)
+
+```bash
+npm test          # run once
+npm run typecheck # tsc --noEmit
+npm run lint      # eslint
+npm run check     # typecheck + lint + test, all together
+```
+
+Unit tests live under `tests/unit/` and use `jsdom` + React Testing Library (see `vitest.config.ts`, setup in `tests/setup.ts`).
+
+### 4.2 End-to-End Tests (Cypress)
+
+Specs live under `cypress/e2e/`. There are two ways to run them:
+
+**Option A — Native (recommended for interactive/GUI use)**
+
+Cypress is a project devDependency, so it runs directly on your machine with no Docker or X11 forwarding involved.
+
+```bash
+# Point Cypress at the Vite dev server
+npm run dev
+npx cypress open --config baseUrl=http://localhost:5173
+
+# ...or against the production Docker build
+docker compose -f docker-compose.ci.yml up -d app
+npx cypress open --config baseUrl=http://localhost:8080
+
+# Headless, CI-style run
+npx cypress run --config baseUrl=http://localhost:5173
+```
+
+This opens the full interactive Test Runner — pick a browser, run a spec, time-travel through commands.
+
+**Option B — Fully containerized (headless only)**
+
+`docker-compose.ci.yml` builds the app image and runs Cypress in the official `cypress/included` container, matching what CI (`.github/workflows/cicd.yml`) does:
+
+```bash
+docker compose -f docker-compose.ci.yml build
+docker compose -f docker-compose.ci.yml run --rm cypress
+docker compose -f docker-compose.ci.yml down
+```
+
+> **Note on the interactive/GUI container variant:** `docker-compose.override.yml` adds an `open`-mode Cypress service with X11 forwarding (`DISPLAY`/`XAUTHORITY` passthrough, `/tmp/.X11-unix` mount) for systems where Docker can reach the host's X server. **This does not work if Docker is installed via snap** — snap's confinement silently mounts anything outside `$HOME` (including `/tmp/.X11-unix`) as an empty directory, so the container never sees a real display. If `docker compose -f docker-compose.ci.yml -f docker-compose.override.yml up cypress` fails with `Missing X server or $DISPLAY`, check `snap list docker` — if Docker is a snap package, use **Option A** (native) instead, which has no such restriction.
+
+---
+
+## 5. Project Structure
 
 ```bash
 focus_hub/

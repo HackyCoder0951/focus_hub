@@ -1,0 +1,14 @@
+services:
+  cypress:
+    environment:
+      # Forward the host's DISPLAY variable to the container
+      - DISPLAY
+      # Container runs as root (HOME=/root); point it at the mounted auth cookie
+      - XAUTHORITY=/root/.Xauthority
+    volumes:
+      # Mount the X11 socket for GUI forwarding
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      # Mount the host's X auth cookie so the root user in the container is authorized
+      - ${XAUTHORITY}:/root/.Xauthority:ro
+    # Override the command to open the interactive test runner
+    command: ["cypress", "open", "--project", "/e2e", "--config", "baseUrl=http://app:80"]
