@@ -72,7 +72,7 @@ jobs:
         run: |
           # Run the app and cypress containers, execute tests, and then shut them down.
           # The `--exit-code-from cypress` flag makes the command exit with the status of the cypress container.
-          docker-compose -f docker-compose.ci.yml run --rm cypress
+          docker compose -f docker-compose.ci.yml run --rm cypress
 
       - name: Upload Cypress artifacts on failure
         if: failure()
