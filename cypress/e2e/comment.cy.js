@@ -2,7 +2,7 @@ describe('Commenting Flow', () => {
   beforeEach(() => {
     cy.visit('/login');
     cy.get('input#email').type('priyakumari@gmail.com');
-    cy.get('input#password').type('user@123');
+    cy.get('input#password').type('User@123');
     cy.get('button[type=submit]').click();
     // Wait until the app redirects to feed and posts have loaded
     cy.url({ timeout: 10000 }).should('include', '/app/feed');

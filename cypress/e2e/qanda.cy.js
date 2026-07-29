@@ -3,7 +3,7 @@ describe('Q&A Flow', () => {
     // Log in first using existing credentials
     cy.visit('/login');
     cy.get('input#email').type('priyakumari@gmail.com');
-    cy.get('input#password').type('user@123');
+    cy.get('input#password').type('User@123');
     cy.get('button[type=submit]').click();
     // Wait for the app to redirect after login (or time out)
     cy.url({ timeout: 10000 }).should('include', '/app');

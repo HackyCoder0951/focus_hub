@@ -2,7 +2,7 @@ describe('Post Creation Flow', () => {
   beforeEach(() => {
     cy.visit('/login');
     cy.get('input#email').type('priyakumari@gmail.com');
-    cy.get('input#password').type('user@123');
+    cy.get('input#password').type('User@123');
     cy.get('button[type=submit]').click();
     cy.url({ timeout: 10000 }).should('include', '/app/feed');
     cy.contains('Loading posts...').should('not.exist');

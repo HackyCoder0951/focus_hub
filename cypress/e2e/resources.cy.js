@@ -3,7 +3,7 @@ describe('Resources - File Upload', () => {
     // Login via UI
     cy.visit('/login');
     cy.get('input#email').type('priyakumari@gmail.com');
-    cy.get('input#password').type('user@123');
+    cy.get('input#password').type('User@123');
     cy.get('button[type=submit]').click();
 
     // Wait for redirect to app and go to resources page
