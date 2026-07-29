@@ -233,4 +233,68 @@ Estimated final assessment:
 - **Implementation alignment:** 70-75%
 - **Remaining implementation and evidence gap:** 25-30%
 - **Highest-risk area:** Testing and deployment readiness
+
+## 12. Addendum — Remediation Update (2026-07-29)
+
+This addendum records a follow-up remediation pass against the Priority Action Plan in Section 10, scoped to **Priority 2 (Testing)** and **Priority 3 (CI/CD)** only. Priority 4 (performance/load testing) and Priority 5 (operational readiness artifacts) were explicitly out of scope for this pass and remain unchanged.
+
+### 12.1 Priority 1 — Restore Build Readiness: Closed
+
+Confirmed still holding: `@fontsource-variable/inter` and `@fontsource-variable/jetbrains-mono` are installed, and `npm run build` passes.
+
+### 12.2 Priority 2 — Implement the Documented Testing Plan: Partially Closed (~30-35%)
+
+| Action Item | Status |
+| --- | --- |
+| Add a standard `npm test` script | Done — wired into CI (previously existed but never ran in a workflow) |
+| Unit tests for feed actions | Not done |
+| Unit tests for Q&A tag normalization | Not done (no such function currently exists) |
+| Unit tests for file utilities | Done — `tests/unit/file-utils.test.ts`, 15 cases against `src/features/resources/lib/file-utils.ts` |
+| Unit tests for chat utility logic | Done — `tests/unit/chat-lib.test.ts`, 18 cases against `src/features/chat/lib.ts` |
+| Unit tests for API helpers | Not done (Supabase-coupled; needs mocking, deferred) |
+| Integration tests (AI answers, Supabase flows, RLS, realtime) | Not done |
+| Map tests to documented IDs (`AUTH-LOGIN-01`, etc.) | Not done |
+
+Added `vitest.config.ts` (jsdom environment, `@testing-library/jest-dom` setup) so component-level tests are now runnable, which was previously missing despite `@testing-library/react` being installed. Real unit test count went from 0 (only meta-scaffolding in `tests/first-report-readiness.test.mjs`, which checks that scripts/docs exist rather than exercising app logic) to 33 across two modules.
+
+### 12.3 Priority 3 — Strengthen CI/CD: Largely Closed (~85%)
+
+| Action Item | Status |
+| --- | --- |
+| Run install, lint, typecheck, unit tests, build in CI | Done — all present in `.github/workflows/cicd.yml` |
+| Cypress smoke tests in CI | Done — `test-docker-local` job, verified to actually run end-to-end (see 12.4) |
+| Archive Cypress screenshots/videos on failure | Done — `upload-artifact` step with `if: failure()` |
+| Dependency audit checks | Partially done — `npm audit --audit-level=high` added, but set to `continue-on-error: true` (non-blocking) because the current dependency tree already has 27 pre-existing advisories (mostly transitive, in `cypress`/`rollup`/`ws`) that would otherwise fail every run; triaging those is separate follow-up work |
+| Separate staging smoke workflow | Not done — `deploy` still pushes straight to Vercel production on push to `MCA_Project` |
+
+Also fixed defects found in the CI/Docker scaffolding that had been added since the original analysis (these predate this addendum and were not previously reviewed):
+
+- `docker-compose.ci.yml` mounted `cypress.config.cjs` from an absolute host path (`/cypress.config.cjs`) instead of the project directory, and mounted it under the wrong filename/extension — silently broken on any machine.
+- The same file pointed Cypress at `http://app:8080`, but the `app` container's nginx listens on port 80 internally; `8080:80` is only the host-side port mapping. Container-to-container traffic needs `http://app:80`. This would have made the containerized Cypress job fail to reach the app in CI.
+- A stray, empty, root-owned directory named `cypress.config.ts` existed at the repo root (likely an accidental `mkdir`), which could interfere with Cypress's config auto-resolution. Removed.
+- `.github/workflows/cypress.yml` (an older, separate workflow using Cypress Cloud recording) duplicated the new `cicd.yml` Cypress job on every push and required a `CYPRESS_RECORD_KEY` secret. Removed in favor of the single `cicd.yml` pipeline.
+- `cypress/e2e/login.cy.js` and `post.cy.js` were near-identical copies (both titled "Login Flow", both with their real assertions commented out) — neither actually validated anything despite `post.cy.js`'s name implying post-creation coverage. Rewrote `login.cy.js` to cover both valid and invalid credentials with real assertions, and rewrote `post.cy.js` to actually exercise post creation via the feed composer.
+- `cypress/screenshots`, `cypress/videos`, `cypress/downloads` were not gitignored; stale committed screenshots from long-removed spec files (`profileEdit.cy.js`, `qa.cy.js`, `resource.cy.js`) were still tracked. Added to `.gitignore`.
+
+### 12.4 New Finding: Live E2E Run Exposes a Test-Data Gap
+
+The containerized Cypress job (`docker compose -f docker-compose.ci.yml run --rm cypress`) was actually executed end-to-end against the built app (not just reviewed statically). Result: **2 of 6 specs passed** (`registration.cy.js`, and the invalid-credentials case in `login.cy.js`). The other 4 — `login.cy.js`'s valid-credentials case, `comment.cy.js`, `qanda.cy.js`, `resources.cy.js` — all fail in their `beforeEach`/login step with the same root cause: Supabase returns `POST 400` on `/auth/v1/token` for the hardcoded test account (`priyakumari@gmail.com` / `user@123`). This account is either deleted, has a changed password, or was never valid against the current Supabase project.
+
+This confirms and sharpens Section 9's conclusion that "the current repository has only partial evidence of execution" — the specs are now individually well-formed, but the suite cannot go green until a working seeded test account is provisioned. This is flagged as an open item requiring project-owner action (Supabase credentials/seed data), not something resolvable through code changes alone.
+
+### 12.5 Verification Performed
+
+An interactive Cypress Test Runner session was also verified to work **natively** (`npx cypress open`, no Docker) against both the Vite dev server and the Dockerized production build served on `localhost:8080` — confirmed via a live screenshot of the running Test Runner window. The equivalent Docker-based interactive/GUI path (`docker-compose.override.yml`, X11 forwarding) was found to be blocked by this host's Docker installation being a **snap package**: snap's confinement silently mounts any host path outside `$HOME` (including `/tmp/.X11-unix`, where the X11 display socket lives) as an empty directory rather than erroring, so the containerized GUI variant cannot reach the host display on this machine. This is documented in `README.md` §4.2 as a known limitation, with the native approach given as the working alternative.
+
+### 12.6 Updated Alignment Estimate
+
+| Area | Original Estimate | Updated Estimate | Basis |
+| --- | ---: | ---: | --- |
+| Feature Implementation | 80-90% | 80-90% (unchanged, out of scope) | — |
+| Testing and QA Evidence | 40-50% | ~55-60% | Real unit test infrastructure and coverage added; E2E specs individually fixed; but no integration tests, no ID traceability, and the suite is currently blocked by invalid test credentials |
+| Deployment and Operations | 40-50% | ~70-75% | CI/CD now runs install → lint → typecheck → unit tests → build → Cypress E2E → audit → artifact archiving; Docker/nginx path verified live end-to-end; still missing a staging stage and a blocking audit gate |
+| Documentation Alignment | 75-85% | 75-85% (unchanged, out of scope) | — |
+| **Overall Project Alignment** | **70-75%** | **~78-80%** | Weighted by the above; Priority 4 and 5 remain entirely open |
+
+**Highest-leverage remaining item:** provisioning a working Supabase test account. Every other open item in Priority 2/3 is incremental, but the E2E suite cannot be reported as passing until this is resolved.
 - **Recommended next step:** Fix build readiness first, then add test and release-readiness evidence.
