@@ -22,7 +22,7 @@ const answerVotesKey = (questionId: number, userId?: string) =>
 
 /** Optimistic cache update with correct delta math:
  *  up -> remove = -1, up -> down = -2, none -> up = +1 (and mirrored). */
-function applyVoteDelta(
+export function applyVoteDelta(
   current: VoteAggregates | undefined,
   targetId: number,
   direction: VoteValue

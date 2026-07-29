@@ -25,7 +25,7 @@ export interface AdminStats {
   files: StatDelta;
 }
 
-function getMonthRange(offset = 0): DateRange {
+export function getMonthRange(offset = 0): DateRange {
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
   const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 1);
@@ -33,7 +33,7 @@ function getMonthRange(offset = 0): DateRange {
 }
 
 /** Percent change, matching the original dashboard math. */
-function percent(curr: number, prev: number): number {
+export function percent(curr: number, prev: number): number {
   if (prev === 0) return curr > 0 ? 100 : 0;
   return Math.round(((curr - prev) / prev) * 100);
 }

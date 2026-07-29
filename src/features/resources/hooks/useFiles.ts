@@ -26,7 +26,7 @@ export const DEFAULT_FILE_FILTERS: FileFiltersState = {
   sort: "newest",
 };
 
-function matchesType(file: FileWithProfile, filter: FileTypeFilter): boolean {
+export function matchesType(file: FileWithProfile, filter: FileTypeFilter): boolean {
   if (filter === "all") return true;
   const kind = getFileKind(file.file_type, file.file_name);
   switch (filter) {
@@ -47,7 +47,7 @@ function matchesType(file: FileWithProfile, filter: FileTypeFilter): boolean {
   }
 }
 
-function sortFiles(a: FileWithProfile, b: FileWithProfile, sort: FileSortOption): number {
+export function sortFiles(a: FileWithProfile, b: FileWithProfile, sort: FileSortOption): number {
   switch (sort) {
     case "newest":
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();

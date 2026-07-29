@@ -15,7 +15,7 @@ interface VoteRow {
   vote_value: number;
 }
 
-function aggregate(rows: VoteRow[], userId?: string): VoteAggregates {
+export function aggregate(rows: VoteRow[], userId?: string): VoteAggregates {
   const scores: Record<number, number> = {};
   const userVotes: Record<number, VoteValue> = {};
   for (const row of rows) {

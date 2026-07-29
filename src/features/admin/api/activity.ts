@@ -13,7 +13,7 @@ export interface ActivityItem {
 
 const LIMIT = 10;
 
-function excerpt(text: string, max = 80): string {
+export function excerpt(text: string, max = 80): string {
   if (!text) return "";
   return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
 }
