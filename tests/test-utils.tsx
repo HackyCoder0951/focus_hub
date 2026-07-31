@@ -3,10 +3,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, type RenderOptions } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
-export function createTestQueryClient() {
+export function createTestQueryClient(options: { gcTime?: number } = {}) {
   return new QueryClient({
     defaultOptions: {
-      queries: { retry: false, gcTime: 0 },
+      // gcTime 0 by default so component tests don't leak state between
+      // cases. Hook tests that manually seed cache data with no active
+      // observer (e.g. `setQueryData` before `renderHook`) need a longer
+      // gcTime — an unobserved query is otherwise garbage-collected before
+      // a mutation's `onMutate` gets a chance to read it.
+      queries: { retry: false, gcTime: options.gcTime ?? 0 },
       mutations: { retry: false },
     },
   });

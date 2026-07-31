@@ -11,7 +11,7 @@ interface UserListItemProps {
 /** Row for followers/following lists: avatar, name link, bio, optional action. */
 export function UserListItem({ user, action }: UserListItemProps) {
   return (
-    <li className="flex items-center justify-between gap-4 rounded-lg p-3 transition-colors hover:bg-accent/40 animate-fade-in">
+    <li data-cy="user-list-item" className="flex items-center justify-between gap-4 rounded-lg p-3 transition-colors hover:bg-accent/40 animate-fade-in">
       <div className="flex min-w-0 items-center gap-4">
         <Avatar className="h-12 w-12">
           <AvatarImage src={user.avatar_url ?? undefined} />

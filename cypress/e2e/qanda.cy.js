@@ -24,7 +24,7 @@ describe('Q&A Flow', () => {
     const body = 'This is a test question created by Cypress.';
 
     // Intercept the Supabase insert to questions so the test is deterministic
-    cy.intercept('POST', '**/rest/v1/questions', (req) => {
+    cy.intercept('POST', '**/rest/v1/questions*', (req) => {
       req.reply({
         statusCode: 201,
         body: [{ id: 99999, title, body, user_id: 1, created_at: new Date().toISOString() }]
@@ -65,5 +65,12 @@ describe('Q&A Flow', () => {
 
     // Confirm the question appears in the list
     cy.contains(title, { timeout: 5000 }).should('be.visible');
+  });
+});
+
+describe('Q&A Access Control', () => {
+  it('redirects an unauthenticated visitor away from the Q&A page (QA-ANSWER-02)', () => {
+    cy.visit('/app/qa');
+    cy.url({ timeout: 10000 }).should('include', '/login');
   });
 });

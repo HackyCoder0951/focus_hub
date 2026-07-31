@@ -20,3 +20,10 @@ describe('Post Creation Flow', () => {
       .should('contain.text', postContent);
   });
 });
+
+describe('Feed Access Control', () => {
+  it('redirects an unauthenticated visitor away from the feed (FEED-POST-03)', () => {
+    cy.visit('/app/feed');
+    cy.url({ timeout: 10000 }).should('include', '/login');
+  });
+});

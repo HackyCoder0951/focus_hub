@@ -71,3 +71,10 @@ describe('Resources - File Upload', () => {
     cy.contains('Cypress test file').should('be.visible');
   });
 });
+
+describe('Resources Access Control', () => {
+  it('redirects an unauthenticated visitor away from the resources page (RES-UPLOAD-04)', () => {
+    cy.visit('/app/resources');
+    cy.url({ timeout: 10000 }).should('include', '/login');
+  });
+});

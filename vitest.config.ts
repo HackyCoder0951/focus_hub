@@ -13,6 +13,9 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./tests/setup.ts"],
+    // Default 5s is tight for userEvent-driven component tests once many
+    // test files run concurrently (CPU contention in CI/sandboxes).
+    testTimeout: 15000,
     env: {
       // Dummy values so `src/integrations/supabase/client.ts` doesn't throw at
       // import time. Tests must not depend on these being real credentials —

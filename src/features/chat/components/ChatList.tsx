@@ -126,6 +126,7 @@ function ChatListItem({
   return (
     <button
       type="button"
+      data-cy="chat-list-item"
       onClick={onSelect}
       className={cn(
         "flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors",
