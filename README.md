@@ -240,6 +240,16 @@ Focus Hub features an advanced AI-powered answer generation system integrated in
 - Benefit from real-time, cost-effective, and privacy-conscious AI models (Groq Llama3, Mixtral, Gemma2, etc.)
 - Seamlessly combine community and AI answers for a richer knowledge base
 
+---
+
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, coding guidelines, and the pull request process.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
 **How it works:**
 - When a question is posted, users can request an AI-generated answer
 - The backend calls Groq API, stores the answer, and displays it in the Q&A interface
