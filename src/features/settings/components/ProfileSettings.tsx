@@ -10,6 +10,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
@@ -20,6 +27,7 @@ import {
 
 const emptyFields: ProfileFields = {
   full_name: "",
+  member_type: "student",
   bio: "",
   website: "",
   location: "",
@@ -37,6 +45,7 @@ export function ProfileSettings() {
     if (profile) {
       setFields({
         full_name: profile.full_name ?? "",
+        member_type: profile.member_type ?? "student",
         bio: profile.bio ?? "",
         website: profile.website ?? "",
         location: profile.location ?? "",
@@ -137,6 +146,23 @@ export function ProfileSettings() {
               Your email is tied to your account and cannot be changed here.
             </p>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="member-type">Member Type</Label>
+          <Select
+            value={fields.member_type}
+            onValueChange={(value) => setField("member_type", value)}
+            disabled={saving}
+          >
+            <SelectTrigger id="member-type">
+              <SelectValue placeholder="Select member type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="student">Student</SelectItem>
+              <SelectItem value="alumni">Alumni</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">

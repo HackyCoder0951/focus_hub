@@ -2,12 +2,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { unwrap, unwrapMaybe } from "@/shared/lib/supabase-helpers";
 import type { FileModel, PostWithAuthor, Profile } from "@/shared/types/db";
 
-/** profiles row plus the signup-metadata member type some rows carry. */
-export type ProfileWithMemberType = Profile & { member_type?: string | null };
+export const PROFILE_SELECT =
+  "id, email, full_name, avatar_url, bio, location, website, settings, created_at, updated_at, member_type, status, last_seen";
 
-export async function fetchProfile(userId: string): Promise<ProfileWithMemberType | null> {
-  return unwrapMaybe<ProfileWithMemberType>(
-    supabase.from("profiles").select("*").eq("id", userId).maybeSingle()
+export async function fetchProfile(userId: string): Promise<Profile | null> {
+  return unwrapMaybe<Profile>(
+    supabase.from("profiles").select(PROFILE_SELECT).eq("id", userId).maybeSingle()
   );
 }
 

@@ -8,6 +8,7 @@ const { supabaseMock } = vi.hoisted(() => ({
 vi.mock("@/integrations/supabase/client", () => ({ supabase: supabaseMock }));
 
 const {
+  PROFILE_SELECT,
   fetchProfile,
   fetchProfileRole,
   fetchUserPosts,
@@ -34,8 +35,10 @@ describe("fetchProfile / fetchProfileRole", () => {
   });
 
   it("returns the profile row when found", async () => {
-    supabaseMock.from.mockReturnValue(queryResult({ id: "u1", full_name: "A" }));
+    const builder = queryResult({ id: "u1", full_name: "A" });
+    supabaseMock.from.mockReturnValue(builder);
     expect(await fetchProfile("u1")).toEqual({ id: "u1", full_name: "A" });
+    expect(builder.select).toHaveBeenCalledWith(PROFILE_SELECT);
   });
 
   it("returns null role when the user has no role row", async () => {

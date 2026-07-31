@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { unwrap } from "@/shared/lib/supabase-helpers";
 import type { TablesUpdate } from "@/integrations/supabase/types";
 import type { FileModel, Post, Profile } from "@/shared/types/db";
+import { PROFILE_SELECT } from "@/features/profile/api/profile";
 
 /** Update the caller's profile row and return the fresh row. */
 export async function updateProfileRow(
@@ -9,7 +10,12 @@ export async function updateProfileRow(
   update: TablesUpdate<"profiles">
 ): Promise<Profile> {
   return unwrap(
-    supabase.from("profiles").update(update).eq("id", userId).select().single()
+    supabase
+      .from("profiles")
+      .update(update)
+      .eq("id", userId)
+      .select(PROFILE_SELECT)
+      .single()
   );
 }
 
@@ -46,7 +52,7 @@ export interface AccountExport {
 export async function fetchAccountExport(userId: string): Promise<AccountExport> {
   const [profile, posts, files] = await Promise.all([
     unwrap<Profile>(
-      supabase.from("profiles").select("*").eq("id", userId).single()
+      supabase.from("profiles").select(PROFILE_SELECT).eq("id", userId).single()
     ),
     unwrap<Post[]>(
       supabase

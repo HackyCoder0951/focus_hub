@@ -24,6 +24,12 @@ describe("updateProfileRow", () => {
     const result = await updateProfileRow("u1", { full_name: "New Name" });
     expect(builder.update).toHaveBeenCalledWith({ full_name: "New Name" });
     expect(builder.eq).toHaveBeenCalledWith("id", "u1");
+    expect(builder.select).toHaveBeenCalledWith(
+      expect.stringContaining("bio")
+    );
+    expect(builder.select).toHaveBeenCalledWith(
+      expect.stringContaining("member_type")
+    );
     expect(result.full_name).toBe("New Name");
   });
 });

@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import type { Profile } from "@/shared/types/db";
 import type { TablesUpdate } from "@/integrations/supabase/types";
+import { PROFILE_SELECT } from "@/features/profile/api/profile";
 import {
   downloadJson,
   fetchAccountExport,
@@ -30,7 +31,11 @@ export function useSettingsProfile() {
     queryKey: qk.profile.detail(user?.id ?? ""),
     queryFn: () =>
       unwrap<Profile>(
-        supabase.from("profiles").select("*").eq("id", user!.id).single()
+        supabase
+          .from("profiles")
+          .select(PROFILE_SELECT)
+          .eq("id", user!.id)
+          .single()
       ),
     enabled: !!user,
     initialData: profile ?? undefined,
@@ -39,6 +44,7 @@ export function useSettingsProfile() {
 
 export interface ProfileFields {
   full_name: string;
+  member_type: string;
   bio: string;
   website: string;
   location: string;
@@ -61,7 +67,15 @@ export function useUpdateProfile() {
     mutationFn: async (input: UpdateProfileInput): Promise<Profile> => {
       if (!user) throw new Error("You must be signed in");
 
-      const update: TablesUpdate<"profiles"> = { ...input.fields };
+      const update: TablesUpdate<"profiles"> = input.fields
+        ? {
+            full_name: input.fields.full_name.trim() || null,
+            member_type: input.fields.member_type || "student",
+            bio: input.fields.bio.trim() || null,
+            website: input.fields.website.trim() || null,
+            location: input.fields.location.trim() || null,
+          }
+        : {};
       if (input.avatarFile) {
         update.avatar_url = await uploadAvatar(user.id, input.avatarFile);
       } else if (input.removeAvatar) {
@@ -70,7 +84,12 @@ export function useUpdateProfile() {
       return updateProfileRow(user.id, update);
     },
     onSuccess: (row, variables) => {
-      if (user) queryClient.setQueryData(qk.profile.detail(user.id), row);
+      if (user) {
+        queryClient.setQueryData(qk.profile.detail(user.id), row);
+        void queryClient.invalidateQueries({
+          queryKey: qk.profile.detail(user.id),
+        });
+      }
       // Nudge AuthContext to refetch the profile so the shell (avatar, name)
       // picks up the change without a page reload.
       void supabase.auth.refreshSession();

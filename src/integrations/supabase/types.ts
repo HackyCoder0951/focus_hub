@@ -403,6 +403,7 @@ export type Database = {
           full_name: string | null
           id: string
           location: string | null
+          member_type: string | null
           settings: Json | null
           updated_at: string
           website: string | null
@@ -417,6 +418,7 @@ export type Database = {
           full_name?: string | null
           id: string
           location?: string | null
+          member_type?: string | null
           settings?: Json | null
           updated_at?: string
           website?: string | null
@@ -431,6 +433,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           location?: string | null
+          member_type?: string | null
           settings?: Json | null
           updated_at?: string
           website?: string | null
