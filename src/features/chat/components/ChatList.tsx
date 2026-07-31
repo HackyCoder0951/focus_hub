@@ -15,6 +15,7 @@ import {
   getInitials,
   getLastMessagePreview,
   getOtherMembers,
+  isUserOnline,
 } from "../lib";
 import { CreateChatDialog } from "./CreateChatDialog";
 
@@ -119,8 +120,7 @@ function ChatListItem({
   const otherMember = getOtherMembers(chat, currentUserId)[0];
   const isOtherOnline =
     !chat.is_group &&
-    !!otherMember?.user_id &&
-    onlineUserIds.has(otherMember.user_id);
+    isUserOnline(otherMember?.profiles, onlineUserIds);
   const preview = getLastMessagePreview(chat.last_message, currentUserId);
 
   return (

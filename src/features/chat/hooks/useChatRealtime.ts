@@ -66,6 +66,13 @@ export function useChatListRealtime() {
           queryClient.invalidateQueries({ queryKey: qk.chat.list });
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: qk.chat.list });
+        }
+      )
       .subscribe();
 
     return () => {

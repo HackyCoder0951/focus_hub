@@ -2,9 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { touchUserPresence } from "../api";
 
 const TYPING_THROTTLE_MS = 2000;
 const TYPING_IDLE_MS = 3000;
+const PRESENCE_HEARTBEAT_MS = 30_000;
 
 /**
  * Global presence channel: which users currently have the app's chat
@@ -17,6 +19,18 @@ export function useOnlineUsers(): Set<string> {
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
+
+    const syncPresence = () => {
+      touchUserPresence(user.id).catch((error) => {
+        if (!cancelled) {
+          console.error("Error syncing chat presence:", error);
+        }
+      });
+    };
+
+    syncPresence();
+    const heartbeat = window.setInterval(syncPresence, PRESENCE_HEARTBEAT_MS);
 
     const channel = supabase.channel("chat-online-users", {
       config: { presence: { key: user.id } },
@@ -33,6 +47,8 @@ export function useOnlineUsers(): Set<string> {
       });
 
     return () => {
+      cancelled = true;
+      window.clearInterval(heartbeat);
       supabase.removeChannel(channel);
     };
   }, [user]);

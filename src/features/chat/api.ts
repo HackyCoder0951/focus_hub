@@ -11,7 +11,7 @@ import type {
 export const MESSAGES_PAGE_SIZE = 30;
 
 const MESSAGE_SELECT =
-  "id, chat_id, user_id, content, created_at, media_url, profiles:user_id(id, full_name, avatar_url)";
+  "id, chat_id, user_id, content, created_at, media_url, profiles:user_id(id, full_name, avatar_url, last_seen)";
 
 type ChatMembershipRow = {
   chat_id: string | null;
@@ -37,7 +37,7 @@ export async function fetchChats(userId: string): Promise<ChatWithDetails[]> {
            id, is_group, name, created_at, created_by,
            chat_members (
              id, chat_id, user_id, joined_at, is_admin,
-             profiles:user_id (id, full_name, avatar_url)
+             profiles:user_id (id, full_name, avatar_url, last_seen)
            )
          )`
       )
@@ -81,6 +81,15 @@ export async function fetchChats(userId: string): Promise<ChatWithDetails[]> {
         new Date(b.last_message?.created_at ?? b.created_at).getTime() -
         new Date(a.last_message?.created_at ?? a.created_at).getTime()
     );
+}
+
+export async function touchUserPresence(userId: string): Promise<void> {
+  await unwrap(
+    supabase
+      .from("profiles")
+      .update({ last_seen: new Date().toISOString() })
+      .eq("id", userId)
+  );
 }
 
 export type MessagesPage = {

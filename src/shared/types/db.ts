@@ -17,7 +17,10 @@ export type ContentFlag = Tables<"content_flags">;
 export type AppNotification = Tables<"notifications">;
 
 // Common joined shapes
-export type ProfileLite = Pick<Profile, "id" | "full_name" | "avatar_url">;
+export type ProfileLite = Pick<
+  Profile,
+  "id" | "full_name" | "avatar_url" | "last_seen"
+>;
 
 export type PostWithAuthor = Post & {
   profiles: Pick<Profile, "full_name" | "avatar_url" | "email"> | null;

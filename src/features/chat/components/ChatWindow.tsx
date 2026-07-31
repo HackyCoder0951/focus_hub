@@ -24,6 +24,7 @@ import {
   getChatDisplayName,
   getInitials,
   getOtherMembers,
+  isUserOnline,
 } from "../lib";
 import { useMessages } from "../hooks/useMessages";
 import { useSendMessage } from "../hooks/useSendMessage";
@@ -61,9 +62,9 @@ export function ChatWindow({ chat, onlineUserIds, onBack, onLeft }: ChatWindowPr
   const displayName = getChatDisplayName(chat, user?.id);
   const otherMembers = getOtherMembers(chat, user?.id);
   const peer = otherMembers[0];
-  const isPeerOnline = !!peer?.user_id && onlineUserIds.has(peer.user_id);
+  const isPeerOnline = isUserOnline(peer?.profiles, onlineUserIds);
   const onlineMemberCount = chat.chat_members.filter(
-    (m) => !!m.user_id && onlineUserIds.has(m.user_id)
+    (m) => isUserOnline(m.profiles, onlineUserIds)
   ).length;
   const typingNames = Object.values(typingUsers);
 

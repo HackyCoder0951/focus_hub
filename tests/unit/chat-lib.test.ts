@@ -6,6 +6,7 @@ import {
   getLastMessagePreview,
   isImageUrl,
   getFileName,
+  isUserOnline,
 } from "@/features/chat/lib";
 import type { ChatWithDetails } from "@/features/chat/types";
 
@@ -84,6 +85,38 @@ describe("getLastMessagePreview", () => {
     expect(
       getLastMessagePreview({ user_id: "me", content: null, media_url: "http://x/f.png" }, "me")
     ).toBe("You: Sent an attachment");
+  });
+});
+
+describe("isUserOnline", () => {
+  it("treats realtime presence as online immediately", () => {
+    expect(
+      isUserOnline(
+        { id: "them", last_seen: null },
+        new Set(["them"]),
+        Date.parse("2026-01-01T00:00:00Z")
+      )
+    ).toBe(true);
+  });
+
+  it("falls back to recent last_seen when realtime presence is missing", () => {
+    expect(
+      isUserOnline(
+        { id: "them", last_seen: "2026-01-01T00:00:30Z" },
+        new Set(),
+        Date.parse("2026-01-01T00:01:00Z")
+      )
+    ).toBe(true);
+  });
+
+  it("treats stale last_seen values as offline", () => {
+    expect(
+      isUserOnline(
+        { id: "them", last_seen: "2026-01-01T00:00:00Z" },
+        new Set(),
+        Date.parse("2026-01-01T00:02:00Z")
+      )
+    ).toBe(false);
   });
 });
 

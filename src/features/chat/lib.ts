@@ -1,5 +1,8 @@
 import { format, isToday, isYesterday } from "date-fns";
+import type { ProfileLite } from "@/shared/types/db";
 import type { ChatWithDetails, LastMessagePreview } from "./types";
+
+export const ONLINE_STALE_MS = 90_000;
 
 /** Display name for a chat: group name, or the other member's name in a 1:1. */
 export function getChatDisplayName(
@@ -52,6 +55,17 @@ export function getLastMessagePreview(
     return `${prefix}Sent an attachment`;
   }
   return `${prefix}${lastMessage.content ?? ""}`;
+}
+
+export function isUserOnline(
+  profile: Pick<ProfileLite, "id" | "last_seen"> | null | undefined,
+  realtimeOnlineIds: Set<string>,
+  now = Date.now()
+): boolean {
+  if (!profile?.id) return false;
+  if (realtimeOnlineIds.has(profile.id)) return true;
+  if (!profile.last_seen) return false;
+  return now - new Date(profile.last_seen).getTime() < ONLINE_STALE_MS;
 }
 
 /** Whether a media URL points at an inline-renderable image. */
