@@ -1,6 +1,7 @@
 import app from './server.js';
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`API server running on http://localhost:${PORT}`);
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 AI Server running on port ${PORT}`);
 });
