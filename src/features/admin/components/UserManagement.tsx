@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Ban, CircleCheck, CircleMinus, MoreHorizontal, Trash2, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -36,6 +44,12 @@ function StatusBadge({ status }: { status: string }) {
     return <Badge variant="destructive">banned</Badge>;
   }
   return <Badge variant="secondary">{status}</Badge>;
+}
+
+function MemberTypeBadge({ memberType }: { memberType: string | null }) {
+  if (memberType === "alumni") return <Badge variant="secondary">Alumni</Badge>;
+  if (memberType === "student") return <Badge variant="outline">Student</Badge>;
+  return <span className="text-xs text-muted-foreground">—</span>;
 }
 
 interface StatusChange {
@@ -71,7 +85,8 @@ const STATUS_CHANGES: Record<UserStatus, StatusChange> = {
 };
 
 export function UserManagement() {
-  const { data: users, isPending, isError } = useAdminUsers();
+  const [memberType, setMemberType] = useState("all");
+  const { data: users, isPending, isError } = useAdminUsers(memberType);
   const statusMutation = useUserStatusMutation();
   const removeUser = useRemoveUser();
   const confirm = useConfirm();
@@ -106,9 +121,21 @@ export function UserManagement() {
 
   return (
     <Card className="rounded-xl shadow-elevation-sm animate-fade-in">
-      <CardHeader>
-        <CardTitle>User Management</CardTitle>
-        <CardDescription>Manage platform users and their status</CardDescription>
+      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+        <div>
+          <CardTitle>User Management</CardTitle>
+          <CardDescription>Manage platform users and their status</CardDescription>
+        </div>
+        <Select value={memberType} onValueChange={setMemberType}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Member type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All members</SelectItem>
+            <SelectItem value="student">Student</SelectItem>
+            <SelectItem value="alumni">Alumni</SelectItem>
+          </SelectContent>
+        </Select>
       </CardHeader>
       <CardContent>
         {isPending ? (
@@ -139,6 +166,7 @@ export function UserManagement() {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Joined</TableHead>
+                  <TableHead>Member Type</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-12 text-right">
                     <span className="sr-only">Actions</span>
@@ -164,6 +192,9 @@ export function UserManagement() {
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                       {new Date(user.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <MemberTypeBadge memberType={user.member_type} />
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={user.status} />

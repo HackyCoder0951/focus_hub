@@ -36,6 +36,7 @@ export const qk = {
     files: (userId: string) => ["profile", userId, "files"] as const,
     followStats: (userId: string) => ["profile", userId, "follow-stats"] as const,
     activity: (userId: string) => ["profile", userId, "activity"] as const,
+    alumniRequest: (userId: string) => ["profile", userId, "alumni-request"] as const,
   },
   notifications: {
     list: (userId: string) => ["notifications", userId] as const,
@@ -43,9 +44,14 @@ export const qk = {
   },
   admin: {
     stats: ["admin", "stats"] as const,
-    users: ["admin", "users"] as const,
+    users: (memberType?: string) => ["admin", "users", memberType ?? "all"] as const,
     flags: (status?: string) => ["admin", "flags", status ?? "all"] as const,
     activity: ["admin", "activity"] as const,
     analytics: ["admin", "analytics"] as const,
+    alumniRequests: (status?: string) => ["admin", "alumni-requests", status ?? "all"] as const,
+  },
+  directory: {
+    alumni: (filters?: { search?: string; graduationYear?: number }) =>
+      ["directory", "alumni", filters ?? {}] as const,
   },
 } as const;

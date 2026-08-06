@@ -3,7 +3,7 @@ import { unwrap, unwrapMaybe } from "@/shared/lib/supabase-helpers";
 import type { FileModel, PostWithAuthor, Profile } from "@/shared/types/db";
 
 export const PROFILE_SELECT =
-  "id, email, full_name, avatar_url, bio, location, website, settings, created_at, updated_at, member_type, status, last_seen";
+  "id, email, full_name, avatar_url, bio, location, website, settings, created_at, updated_at, member_type, status, last_seen, graduation_year, company, designation";
 
 export async function fetchProfile(userId: string): Promise<Profile | null> {
   return unwrapMaybe<Profile>(

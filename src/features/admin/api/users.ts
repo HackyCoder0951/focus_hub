@@ -7,18 +7,23 @@ export type UserStatus = "active" | "banned" | "inactive";
 /** Profile fields the admin user table needs, with status defaulted. */
 export type AdminUser = Pick<
   Profile,
-  "id" | "full_name" | "email" | "avatar_url" | "created_at"
+  "id" | "full_name" | "email" | "avatar_url" | "created_at" | "member_type"
 > & {
   status: string;
 };
 
-export async function fetchAdminUsers(): Promise<AdminUser[]> {
-  const rows = await unwrap(
-    supabase
-      .from("profiles")
-      .select("id, full_name, email, avatar_url, created_at, status")
-      .order("created_at", { ascending: false })
-  );
+/** "all" (or omitted) returns every user; otherwise filters to that member_type. */
+export async function fetchAdminUsers(memberType?: string): Promise<AdminUser[]> {
+  let query = supabase
+    .from("profiles")
+    .select("id, full_name, email, avatar_url, created_at, status, member_type")
+    .order("created_at", { ascending: false });
+
+  if (memberType && memberType !== "all") {
+    query = query.eq("member_type", memberType);
+  }
+
+  const rows = await unwrap(query);
   return (rows ?? []).map((row) => ({
     ...row,
     status: row.status ?? "active",

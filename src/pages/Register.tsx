@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthLayout } from "@/components/AuthLayout";
@@ -17,7 +16,6 @@ const Register = () => {
     password: "",
     confirmPassword: "",
     agreeToTerms: false,
-    memberType: "student"
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -38,7 +36,9 @@ const Register = () => {
     }
 
     setIsLoading(true);
-    await signUp(formData.email, formData.password, formData.name, formData.memberType);
+    // Everyone signs up as a student; alumni status is only granted through
+    // the admin-reviewed verification flow in Settings, not self-declared here.
+    await signUp(formData.email, formData.password, formData.name, "student");
     setIsLoading(false);
   };
 
@@ -119,24 +119,6 @@ const Register = () => {
           {formData.password !== formData.confirmPassword && formData.confirmPassword && (
             <p className="text-sm text-destructive">Passwords do not match</p>
           )}
-        </div>
-        <div className="space-y-2">
-          <Label>Registering as</Label>
-          <RadioGroup
-            value={formData.memberType}
-            onValueChange={(value) => setFormData({ ...formData, memberType: value })}
-            className="flex gap-6"
-            disabled={isLoading}
-          >
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="student" id="member-student" />
-              <Label htmlFor="member-student" className="font-normal">Student</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="alumni" id="member-alumni" />
-              <Label htmlFor="member-alumni" className="font-normal">Alumni</Label>
-            </div>
-          </RadioGroup>
         </div>
         <div className="flex items-center space-x-2">
           <Checkbox

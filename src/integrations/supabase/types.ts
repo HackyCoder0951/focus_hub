@@ -409,6 +409,9 @@ export type Database = {
           website: string | null
           status: string | null
           last_seen: string | null
+          graduation_year: number | null
+          company: string | null
+          designation: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -424,6 +427,9 @@ export type Database = {
           website?: string | null
           status?: string | null
           last_seen?: string | null
+          graduation_year?: number | null
+          company?: string | null
+          designation?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -439,8 +445,62 @@ export type Database = {
           website?: string | null
           status?: string | null
           last_seen?: string | null
+          graduation_year?: number | null
+          company?: string | null
+          designation?: string | null
         }
         Relationships: []
+      }
+      alumni_verification_requests: {
+        Row: {
+          id: string
+          user_id: string
+          graduation_year: number | null
+          company: string | null
+          designation: string | null
+          status: string
+          reviewed_by: string | null
+          reviewed_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          graduation_year?: number | null
+          company?: string | null
+          designation?: string | null
+          status?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          graduation_year?: number | null
+          company?: string | null
+          designation?: string | null
+          status?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alumni_verification_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alumni_verification_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       qanotifications: {
         Row: {

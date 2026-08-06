@@ -15,6 +15,7 @@ export type FileModel = Tables<"filemodels">;
 export type Follower = Tables<"followers">;
 export type ContentFlag = Tables<"content_flags">;
 export type AppNotification = Tables<"notifications">;
+export type AlumniVerificationRequest = Tables<"alumni_verification_requests">;
 
 // Common joined shapes
 export type ProfileLite = Pick<

@@ -37,7 +37,25 @@ type PostCardPost = ComponentProps<typeof PostCard>["post"];
 const TAB_TRIGGER_CLASS =
   "rounded-none border-b-2 border-transparent px-1 pb-3 pt-2 font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none";
 
-function AboutCard({ bio, website, location }: { bio?: string | null; website?: string | null; location?: string | null }) {
+interface AboutCardProps {
+  bio?: string | null;
+  website?: string | null;
+  location?: string | null;
+  memberType?: string | null;
+  graduationYear?: number | null;
+  company?: string | null;
+  designation?: string | null;
+}
+
+function AboutCard({
+  bio,
+  website,
+  location,
+  memberType,
+  graduationYear,
+  company,
+  designation,
+}: AboutCardProps) {
   return (
     <Card>
       <CardHeader>
@@ -56,6 +74,25 @@ function AboutCard({ bio, website, location }: { bio?: string | null; website?: 
           <h4 className="mb-2 font-semibold">Location</h4>
           <p className="text-sm text-muted-foreground">{location || "—"}</p>
         </div>
+        {memberType === "alumni" && (
+          <div>
+            <h4 className="mb-2 font-semibold">Alumni Info</h4>
+            <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
+              <div>
+                <dt className="text-xs text-muted-foreground">Graduation Year</dt>
+                <dd>{graduationYear ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Company</dt>
+                <dd>{company || "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Designation</dt>
+                <dd>{designation || "—"}</dd>
+              </div>
+            </dl>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -175,7 +212,15 @@ const Profile = () => {
       </Card>
 
       {isAdmin ? (
-        <AboutCard bio={profileData.bio} website={profileData.website} location={profileData.location} />
+        <AboutCard
+          bio={profileData.bio}
+          website={profileData.website}
+          location={profileData.location}
+          memberType={profileData.member_type}
+          graduationYear={profileData.graduation_year}
+          company={profileData.company}
+          designation={profileData.designation}
+        />
       ) : (
         <>
           {/* Stat pills + Q&A stats */}
@@ -265,7 +310,15 @@ const Profile = () => {
             </TabsContent>
 
             <TabsContent value="about">
-              <AboutCard bio={profileData.bio} website={profileData.website} location={profileData.location} />
+              <AboutCard
+                bio={profileData.bio}
+                website={profileData.website}
+                location={profileData.location}
+                memberType={profileData.member_type}
+                graduationYear={profileData.graduation_year}
+                company={profileData.company}
+                designation={profileData.designation}
+              />
             </TabsContent>
           </Tabs>
         </>

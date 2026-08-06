@@ -54,6 +54,8 @@ describe("useUpdateProfile", () => {
       website: "https://example.com",
       location: "Pune",
       member_type: "alumni",
+      company: "Acme Corp",
+      designation: "Engineer",
     } as Profile;
     const builder = queryResult(updatedProfile);
     supabaseMock.from.mockReturnValue(builder);
@@ -79,7 +81,8 @@ describe("useUpdateProfile", () => {
         bio: "  Updated bio  ",
         website: "  https://example.com  ",
         location: "  Pune  ",
-        member_type: "alumni",
+        company: "  Acme Corp  ",
+        designation: "  Engineer  ",
       },
     });
 
@@ -90,7 +93,8 @@ describe("useUpdateProfile", () => {
       bio: "Updated bio",
       website: "https://example.com",
       location: "Pune",
-      member_type: "alumni",
+      company: "Acme Corp",
+      designation: "Engineer",
     });
     expect(queryClient.getQueryData(qk.profile.detail("u1"))).toEqual(
       updatedProfile
@@ -120,7 +124,8 @@ describe("useUpdateProfile", () => {
         bio: " ",
         website: "",
         location: "   ",
-        member_type: "",
+        company: "",
+        designation: "  ",
       },
     });
 
@@ -131,7 +136,8 @@ describe("useUpdateProfile", () => {
       bio: null,
       website: null,
       location: null,
-      member_type: "student",
+      company: null,
+      designation: null,
     });
   });
 });

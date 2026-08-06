@@ -7,8 +7,9 @@ import { SystemHealth } from "@/features/admin/components/SystemHealth";
 import { UserManagement } from "@/features/admin/components/UserManagement";
 import { FlaggedContent } from "@/features/admin/components/FlaggedContent";
 import { ReportsTab } from "@/features/admin/components/ReportsTab";
+import { AlumniRequests } from "@/features/admin/components/AlumniRequests";
 
-const TABS = ["overview", "users", "content", "reports"] as const;
+const TABS = ["overview", "users", "content", "alumni", "reports"] as const;
 type AdminTab = (typeof TABS)[number];
 
 function isAdminTab(value: string | null): value is AdminTab {
@@ -38,6 +39,7 @@ const AdminDashboard = () => {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="content">Content</TabsTrigger>
+          <TabsTrigger value="alumni">Alumni Requests</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
@@ -55,6 +57,10 @@ const AdminDashboard = () => {
 
         <TabsContent value="content">
           <FlaggedContent />
+        </TabsContent>
+
+        <TabsContent value="alumni">
+          <AlumniRequests />
         </TabsContent>
 
         <TabsContent value="reports">

@@ -25,6 +25,7 @@ import AdminWelcome from "./pages/AdminWelcome";
 import AppRedirect from "./pages/AppRedirect";
 import FollowersList from "./pages/FollowersList";
 import FollowingList from "./pages/FollowingList";
+import AlumniDirectory from "./pages/AlumniDirectory";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -65,6 +66,7 @@ const App = () => (
                 <Route path="AdminDashboard" element={<Navigate to="/app/admin/dashboard" replace />} />
                 <Route path="followers" element={<FollowersList />} />
                 <Route path="following" element={<FollowingList />} />
+                <Route path="alumni-directory" element={<AlumniDirectory />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

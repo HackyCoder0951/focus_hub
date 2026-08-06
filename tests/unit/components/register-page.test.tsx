@@ -73,14 +73,14 @@ describe("Register page", () => {
     expect(signUp).not.toHaveBeenCalled();
   });
 
-  it("switches memberType to alumni when that radio option is selected", async () => {
+  it("always signs up as student — alumni status is granted via verification, not self-declared", async () => {
     const user = userEvent.setup();
     renderWithProviders(<Register />);
     await fillRequiredFields(user);
-    await user.click(screen.getByLabelText("Alumni"));
+    expect(screen.queryByLabelText("Alumni")).not.toBeInTheDocument();
     await user.click(screen.getByLabelText(/I agree to the/));
     await user.click(screen.getByRole("button", { name: /create account/i }));
-    expect(signUp).toHaveBeenCalledWith("jane@example.com", "password123", "Jane Doe", "alumni");
+    expect(signUp).toHaveBeenCalledWith("jane@example.com", "password123", "Jane Doe", "student");
   });
 
   it("redirects to /app once the user becomes authenticated (AUTH-REG-01)", () => {

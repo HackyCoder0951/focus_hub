@@ -15,6 +15,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  isAlumni: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -216,6 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAdmin = userRole === 'admin';
+  const isAlumni = profile?.member_type === 'alumni';
 
   const value = {
     user,
@@ -227,6 +229,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signOut,
     isAdmin,
+    isAlumni,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -8,12 +8,15 @@ import {
   type UserStatus,
 } from "../api/users";
 
-export function useAdminUsers() {
+export function useAdminUsers(memberType?: string) {
   return useQuery({
-    queryKey: qk.admin.users,
-    queryFn: fetchAdminUsers,
+    queryKey: qk.admin.users(memberType),
+    queryFn: () => fetchAdminUsers(memberType),
   });
 }
+
+/** Prefix that matches every qk.admin.users(memberType) key. */
+const USERS_PREFIX = qk.admin.users().slice(0, 2);
 
 const STATUS_LABEL: Record<UserStatus, string> = {
   active: "activated",
@@ -27,7 +30,7 @@ export function useUserStatusMutation() {
     mutationFn: ({ id, status }: { id: string; status: UserStatus }) =>
       updateUserStatus(id, status),
     onSuccess: (_data, { status }) => {
-      queryClient.invalidateQueries({ queryKey: qk.admin.users });
+      queryClient.invalidateQueries({ queryKey: USERS_PREFIX });
       toast.success(`User ${STATUS_LABEL[status]}`);
     },
     onError: () => {
@@ -41,7 +44,7 @@ export function useRemoveUser() {
   return useMutation({
     mutationFn: (id: string) => removeUserProfile(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: qk.admin.users });
+      queryClient.invalidateQueries({ queryKey: USERS_PREFIX });
       queryClient.invalidateQueries({ queryKey: qk.admin.stats });
       toast.success("Profile removed");
     },

@@ -44,10 +44,12 @@ export function useSettingsProfile() {
 
 export interface ProfileFields {
   full_name: string;
-  member_type: string;
   bio: string;
   website: string;
   location: string;
+  /** Only meaningful once member_type is "alumni"; editable by the user post-verification. */
+  company: string;
+  designation: string;
 }
 
 export interface UpdateProfileInput {
@@ -70,10 +72,11 @@ export function useUpdateProfile() {
       const update: TablesUpdate<"profiles"> = input.fields
         ? {
             full_name: input.fields.full_name.trim() || null,
-            member_type: input.fields.member_type || "student",
             bio: input.fields.bio.trim() || null,
             website: input.fields.website.trim() || null,
             location: input.fields.location.trim() || null,
+            company: input.fields.company.trim() || null,
+            designation: input.fields.designation.trim() || null,
           }
         : {};
       if (input.avatarFile) {
