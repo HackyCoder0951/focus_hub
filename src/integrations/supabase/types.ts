@@ -502,6 +502,61 @@ export type Database = {
           },
         ]
       }
+      mentorship_connections: {
+        Row: {
+          id: string
+          student_id: string
+          alumni_id: string
+          message: string | null
+          status: string
+          chat_id: string | null
+          created_at: string
+          responded_at: string | null
+        }
+        Insert: {
+          id?: string
+          student_id: string
+          alumni_id: string
+          message?: string | null
+          status?: string
+          chat_id?: string | null
+          created_at?: string
+          responded_at?: string | null
+        }
+        Update: {
+          id?: string
+          student_id?: string
+          alumni_id?: string
+          message?: string | null
+          status?: string
+          chat_id?: string | null
+          created_at?: string
+          responded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentorship_connections_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mentorship_connections_alumni_id_fkey"
+            columns: ["alumni_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mentorship_connections_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       qanotifications: {
         Row: {
           created_at: string

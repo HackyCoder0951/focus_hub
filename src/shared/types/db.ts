@@ -16,6 +16,7 @@ export type Follower = Tables<"followers">;
 export type ContentFlag = Tables<"content_flags">;
 export type AppNotification = Tables<"notifications">;
 export type AlumniVerificationRequest = Tables<"alumni_verification_requests">;
+export type MentorshipConnection = Tables<"mentorship_connections">;
 
 // Common joined shapes
 export type ProfileLite = Pick<

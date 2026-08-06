@@ -54,4 +54,9 @@ export const qk = {
     alumni: (filters?: { search?: string; graduationYear?: number }) =>
       ["directory", "alumni", filters ?? {}] as const,
   },
+  mentorship: {
+    sent: (studentId: string) => ["mentorship", "sent", studentId] as const,
+    incoming: (alumniId: string, status?: string) =>
+      ["mentorship", "incoming", alumniId, status ?? "pending"] as const,
+  },
 } as const;

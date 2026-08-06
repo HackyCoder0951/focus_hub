@@ -4,8 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/EmptyState";
+import { useAuth } from "@/contexts/AuthContext";
 import { UserListItem } from "@/features/profile/components/UserListItem";
 import { useAlumniDirectory } from "@/features/directory/hooks/useAlumniDirectory";
+import { RequestMentorshipButton } from "@/features/mentorship/components/RequestMentorshipButton";
+import { useSentMentorshipRequests } from "@/features/mentorship/hooks/useMentorship";
 
 /** Small trailing summary shown next to each directory row's name/bio. */
 function AlumniMeta({
@@ -25,6 +28,7 @@ function AlumniMeta({
 }
 
 const AlumniDirectory = () => {
+  const { profile } = useAuth();
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [graduationYear, setGraduationYear] = useState("");
@@ -39,6 +43,14 @@ const AlumniDirectory = () => {
     search: search || undefined,
     graduationYear: graduationYear ? Number(graduationYear) : undefined,
   });
+
+  // Only students can request mentorship; fetch their sent requests so each
+  // row can show "Requested" / "Message" instead of a duplicate button.
+  const isStudentViewer = profile?.member_type === "student";
+  const { data: sentRequests } = useSentMentorshipRequests();
+  const connectionByAlumnusId = new Map(
+    (sentRequests ?? []).map((item) => [item.connection.alumni_id, item])
+  );
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 py-8 animate-fade-in">
@@ -86,11 +98,20 @@ const AlumniDirectory = () => {
                   key={entry.id}
                   user={entry}
                   action={
-                    <AlumniMeta
-                      graduationYear={entry.graduation_year}
-                      company={entry.company}
-                      designation={entry.designation}
-                    />
+                    <div className="flex items-center gap-3">
+                      <AlumniMeta
+                        graduationYear={entry.graduation_year}
+                        company={entry.company}
+                        designation={entry.designation}
+                      />
+                      {isStudentViewer && (
+                        <RequestMentorshipButton
+                          alumniId={entry.id}
+                          alumniName={entry.full_name || "this alumnus"}
+                          existing={connectionByAlumnusId.get(entry.id)}
+                        />
+                      )}
+                    </div>
                   }
                 />
               ))}

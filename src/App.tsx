@@ -26,6 +26,7 @@ import AppRedirect from "./pages/AppRedirect";
 import FollowersList from "./pages/FollowersList";
 import FollowingList from "./pages/FollowingList";
 import AlumniDirectory from "./pages/AlumniDirectory";
+import Mentorship from "./pages/Mentorship";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -67,6 +68,7 @@ const App = () => (
                 <Route path="followers" element={<FollowersList />} />
                 <Route path="following" element={<FollowingList />} />
                 <Route path="alumni-directory" element={<AlumniDirectory />} />
+                <Route path="mentorship" element={<Mentorship />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

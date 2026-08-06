@@ -11,6 +11,7 @@ import {
   ChevronsUpDown,
   LogOut,
   GraduationCap,
+  HeartHandshake,
 } from "lucide-react";
 import {
   Sidebar,
@@ -47,6 +48,7 @@ const communityGroup: NavGroup = {
     { name: "Q&A", href: "/app/qa", icon: Book },
     { name: "Chat", href: "/app/chat", icon: MessageCircle },
     { name: "Alumni Directory", href: "/app/alumni-directory", icon: GraduationCap },
+    { name: "Mentorship", href: "/app/mentorship", icon: HeartHandshake },
   ],
 };
 
